@@ -1,0 +1,5 @@
+.vagrant
+bin/
+terraform/.terraform*
+terraform.tfstate
+terraform.tfstate.backup

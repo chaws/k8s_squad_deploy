@@ -1,0 +1,56 @@
+#
+# Autoscale pods to have minumum of 2 pods up to 10 pods
+# depending on CPU average load
+#
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: squad-worker-autoscale
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: squad-worker-deployment
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 50
+
+---
+
+#
+# Deploy initially one pod of squad-web container
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: squad-worker-deployment
+  labels:
+    app: squad-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: squad-worker
+  template:
+    metadata:
+      labels:
+        app: squad-worker
+    spec:
+      containers:
+      - name: squad-worker
+        image: squadproject/squad:0.7
+        command: ["sh", "-c"]
+        args:
+        - squad-worker --exclude-queues=ci_fetch
+        env:
+        - name: DATABASE
+          value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200525114035650700000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"
+        - name: SQUAD_CELERY_BROKER_URL
+          value: "amqp://192.168.47.4"
+        resources:
+          requests:
+            memory: "128M"
+            cpu: "250m"
+          limits:
+            memory: "512M"
+            cpu: "500m"

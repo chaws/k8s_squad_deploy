@@ -1,0 +1,100 @@
+#
+# Apply migration before each update
+# NOTE: maybe create a separate folder with scripts needed to run before application updates
+#apiVersion: batch/v1
+#kind: Job
+#metadata:
+#  name: squad-migration
+#spec:
+#  template:
+#    metadata:
+#      name: squad-migration
+#    spec:
+#      containers:
+#      - name: squad-migration
+#        image: qareports/squad
+#        command: ["squad-admin"]
+#        args: ["migrate"]
+#        env:
+#        - name: DATABASE
+#          value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200521185001277100000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"
+#      restartPolicy: Never
+
+---
+
+#
+# Autoscale pods to have minumum of 2 pods up to 10 pods
+# depending on CPU average load
+#
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: squad-web-autoscale
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: squad-web-deployment
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 50
+
+---
+
+#
+# Expose squad-web pods externally
+#
+apiVersion: v1
+kind: Service
+metadata:
+  name: squad-web-service
+spec:
+  selector:
+    app: squad-web
+  ports:
+    - port: 80
+  type: LoadBalancer
+  externalIPs:
+  - 192.168.50.10  # it'll take another dns address when in production
+
+---
+
+#
+# Deploy initially one pod of squad-web container
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: squad-web-deployment
+  labels:
+    app: squad-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: squad-web
+  template:
+    metadata:
+      labels:
+        app: squad-web
+    spec:
+      containers:
+      - name: squad-web
+        image: squadproject/squad:0.7
+        command: ["sh", "-c"]
+        args:
+        - service apache2 start && squad --timeout=60 --workers=2 --fast --log-level DEBUG
+        ports:
+        - containerPort: 80
+        env:
+        - name: DATABASE
+          value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200525114035650700000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"
+        - name: SQUAD_CELERY_BROKER_URL
+          value: "amqp://192.168.47.4"
+        resources:
+          requests:
+            memory: "128M"
+            cpu: "250m"
+          limits:
+            memory: "512M"
+            cpu: "500m"

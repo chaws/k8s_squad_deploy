@@ -1,0 +1,38 @@
+#!/bin/sh
+
+set -eu
+
+if [ $# -lt 1 ]; then
+    echo "usage: $0 dev|staging|production [ansible-opts]"
+    exit 1
+fi
+
+env="$1"
+if [ ! $env = dev ]
+then
+    echo Just deploying dev environments so far
+    exit
+fi
+
+shift
+if [ $# -eq 0 ]; then
+    set -- 'ansible/site.yml'
+fi
+basedir=$(dirname $0)
+
+extra_arg=''
+if [ -d .vagrant ]; then
+    vagrant ssh-config > .vagrant/ssh_config
+fi
+
+inventory="ansible/hosts.dev"
+
+export ANSIBLE_CONFIG="ansible/ansible.cfg"
+
+ansible --version
+
+exec ansible-playbook \
+    --inventory-file="$inventory" \
+    --become \
+    $extra_arg \
+    "$@"

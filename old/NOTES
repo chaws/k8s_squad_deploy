@@ -1,0 +1,17 @@
+I'm following the official kubernetes tutorial on https://kubernetes.io/docs/tutorials/kubernetes-basics
+
+Concepts learnt so far
+1. Kubernetes run on a master-worker fashon, one master controls N workers.
+2. Master need to run kubectl, kubeadm and kubelet
+3. Workers need to run kubeadm to join a master and kubelet that responds to commands sent from master
+4. Once that infrastructure is set up, one can start the first deployment
+4.1. `kubectl create deployment kubernetes-bootcamp --image=gcr.io/google-samples/kubernetes-bootcamp:v1`
+4.1.1. This is a very simple container that simply shows a string on port 8080
+4.2. `kubectl get deployments` show the deployment happening, this might take a few minutes because docker is downloading the image and starting up the container
+4.3. In order to access the simple application, one has to start kubernetes proxy on a terminal which kinda opens a tunel to that container
+5. So far, the container is accessible to only internal pods, we need to create a object of type service to export application port
+
+
+# Networking
+
+Kubernetes creates an abstract network among all pods in a cluster, it does some crazy magic to make that happen.

@@ -1,0 +1,22 @@
+#!/bin/sh
+
+set -eu
+
+ENV=staging
+export TF_DATA_DIR=.terraform_${ENV}
+
+# init if needed
+if [ ! -d "${TF_DATA_DIR}" ]; then
+    terraform init
+fi
+
+if [ $# -eq 0 ]; then
+    set -- plan .
+fi
+
+export TF_CLI_ARGS="-var-file=shared.tfvars"
+
+terraform "$@"
+
+# set the stage for ansible
+# terraform state pull | ./scripts/state_to_ansible_inventory.py > "../ansible/hosts.${ENV}"

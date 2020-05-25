@@ -1,0 +1,12 @@
+#!/bin/sh
+
+BIN=./bin
+KUBECTL=./bin/kubectl
+EKSCTL=./bin/eksctl
+
+set -eu
+
+if [ $# -lt 1 ]; then
+    echo "usage: $0 dev|staging|production"
+    exit 1
+fi

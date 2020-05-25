@@ -1,0 +1,35 @@
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN5RENDQWJDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJd01EVXlNVEV5TVRRME9Wb1hEVE13TURVeE9URXlNVFEwT1Zvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTnRpClpqazM3dUo5Skp2WFNsVllLOVlKeHpIMk5MYXRNY0Qwc0FiUll3WDdTSVlNay8zdUliRlAzQVM0U0pZQ2FPSGQKUVRyUTZTdzg5dURqb2V6SHdGWGp5TVVUZm5CY0xuZHpKaWt2Q2tiU1FEUVZYNFJZYkNmUGxETGora0ZmbXNCQwpmUnN1bWpreERaV2I3QUlER0NCZXZrQ1VYTG9oRGw2dUNjQS9WZ2VxRkRPTkpWVmwzbGt2UjN3UkNpLzVIM3hJCnd4OWlXaHdibzF1VzRucU85RDNIL1VwMFo2aWlla3FYTWwrWXY4NHlBU2tpR0ZEQmlSWHN5QWYxcVArRzVhV0IKM1FnZDhUd1EyUWJYKy8rWTlEUFhXbUZGZHE3eCtBTWFzeXcyU2NENDRlQXdyNEdBVkxxODhvcFp3RXJwYm9HegozczdGZ2w5TGtBRlozVlZmcDZrQ0F3RUFBYU1qTUNFd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFDUDlSU3NDVUlPVGs4cGR0S2gwSUVtS05Sa3YKMzk0ZFM5VGsrcmx2ZlkwWnp2bnBYZUdTb3RsOXFzWHNadUdXY0RPNVV3R28xUWMyTzBpTGNtNVh1Q2pNZXlpbApmWEZiMU5nZUVCRUZSU0Z4WXRuWnZzZ0hWSzU0ZDBrRlZvZ2UyeGlGY0ZNNFJPKzJmU0gyRDh6MHdRanNNazNMCnM0WHhzTEcwRGVaSzNQczEwcisxZkw4dDBpZUxlZ1lHb2pORm5XZVN5TitPOEFsU05SYnJyRFJ1MGJJa2oxSnIKMlBCc25zb0EzU2orNHBVcVU1SS9mcThiRENUOG5jNHl3L0R4WXZSSkNsNVBmMElZMVpGeCtpSlNMbEhXL0N5MgpZUjM1STdzcXcrdGxRZkpHc3VDUTR3OTZoanQ2VzU4UzAzTzVIZzJ0N2FRUktQaXE3cDhrY21idzNJWT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+    server: https://74FCBAB19CEA05BB6C3C17FB07C56958.gr7.us-east-1.eks.amazonaws.com
+  name: chaws-eks.us-east-1.eksctl.io
+contexts:
+- context:
+    cluster: chaws-eks.us-east-1.eksctl.io
+    namespace: chaws
+    user: chaws@chaws-eks.us-east-1.eksctl.io
+  name: chaws
+- context:
+    cluster: chaws-eks.us-east-1.eksctl.io
+    user: chaws@chaws-eks.us-east-1.eksctl.io
+  name: chaws@chaws-eks.us-east-1.eksctl.io
+current-context: chaws
+kind: Config
+preferences: {}
+users:
+- name: chaws@chaws-eks.us-east-1.eksctl.io
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1alpha1
+      args:
+      - eks
+      - get-token
+      - --cluster-name
+      - chaws-eks
+      - --region
+      - us-east-1
+      command: aws
+      env:
+      - name: AWS_STS_REGIONAL_ENDPOINTS
+        value: regional

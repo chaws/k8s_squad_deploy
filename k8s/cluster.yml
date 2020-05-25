@@ -1,0 +1,48 @@
+# ClusterConfig with a normal nodegroup and a Fargate profile.
+---
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: qareports-eks-cluster
+  region: us-east-1
+  version: "1.16"
+  # I need to make it use a custom security group so that it'll be added to RDS allowed security groups
+vpc:
+  id: "vpc-03eacf5b68d081df0"
+  cidr: "192.168.0.0/16"
+  nat:
+    gateway: Disable
+  subnets:
+    private:
+      us-east-1d:
+          id: "subnet-057770b8369be4dfb"
+          cidr: "192.168.96.0/19"
+      us-east-1c:
+          id: "subnet-0e2ff005295177be9"
+          cidr: "192.168.64.0/19"
+    public:
+      us-east-1d:
+          id: "subnet-01d20bed55be8498f"
+          cidr: "192.168.32.0/19"
+      us-east-1c:
+          id: "subnet-07900957bb8081410"
+          cidr: "192.168.0.0/19"
+
+nodeGroups:
+  - name: ng-1
+    instanceType: t3a.medium
+    desiredCapacity: 1
+
+fargateProfiles:
+  - name: fp-default
+    selectors:
+      - namespace: default
+      - namespace: kube-system
+      - namespace: kubernetes-dashboard
+  - name: fp-staging
+    selectors:
+      - namespace: qareports-staging
+  - name: fp-production
+    selectors:
+      - namespace: qareports-production
