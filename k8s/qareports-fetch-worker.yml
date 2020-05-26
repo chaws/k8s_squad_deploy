@@ -1,28 +1,47 @@
 #
-# Deploy one squad container running squad-listener
+# Autoscale pods to have minumum of 2 pods up to 10 pods
+# depending on CPU average load
+#
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: qareports-fetch-worker-autoscale
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: qareports-fetch-worker-deployment
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 50
+
+---
+
+#
+# Deploy one pod of squad container to run as worker
 #
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: squad-listener-deployment
+  name: qareports-fetch-worker-deployment
   labels:
-    app: squad-listener
+    app: qareports-fetch-worker
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: squad-listener
+      app: qareports-fetch-worker
   template:
     metadata:
       labels:
-        app: squad-listener
+        app: qareports-fetch-worker
     spec:
       containers:
-      - name: squad-listener
+      - name: qareports-fetch-worker
         image: squadproject/squad:0.7
         command: ["sh", "-c"]
         args:
-        - squad-listener
+        - squad-worker --exclude-queues=core_notification,ci_quick
         env:
         - name: DATABASE
           value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200526103502409100000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"

@@ -1,30 +1,47 @@
 #
-# Deploy one squad container for squad-scheduler
+# Autoscale pods to have minumum of 2 pods up to 10 pods
+# depending on CPU average load
+#
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: qareports-worker-autoscale
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: qareports-worker-deployment
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 50
+
+---
+
+#
+# Deploy initially one pod of qareports-web container
 #
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: squad-scheduler-deployment
+  name: qareports-worker-deployment
   labels:
-    app: squad-scheduler
+    app: qareports-worker
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: squad-scheduler
+      app: qareports-worker
   template:
     metadata:
       labels:
-        app: squad-scheduler
+        app: qareports-worker
     spec:
       containers:
-      - name: squad-scheduler
+      - name: qareports-worker
         image: squadproject/squad:0.7
         command: ["sh", "-c"]
         args:
-        - squad-scheduler --schedule=/app/celerybeat-schedule.db
-        ports:
-        - containerPort: 80
+        - squad-worker --exclude-queues=ci_fetch
         env:
         - name: DATABASE
           value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200526103502409100000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"

@@ -1,0 +1,21 @@
+#
+# Apply migration before each update
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: qareports-migration
+spec:
+  template:
+    metadata:
+      name: qareports-migration
+    spec:
+      containers:
+      - name: qareports-migration
+        image: qareports/squad
+        command: ["qareports-admin"]
+        args:
+        - migrate
+        env:
+        - name: DATABASE
+          value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200526103502409100000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"
+      restartPolicy: Never

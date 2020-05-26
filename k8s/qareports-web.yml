@@ -1,40 +1,16 @@
 #
-# Apply migration before each update
-# NOTE: maybe create a separate folder with scripts needed to run before application updates
-#apiVersion: batch/v1
-#kind: Job
-#metadata:
-#  name: squad-migration
-#spec:
-#  template:
-#    metadata:
-#      name: squad-migration
-#    spec:
-#      containers:
-#      - name: squad-migration
-#        image: qareports/squad
-#        command: ["squad-admin"]
-#        args: ["migrate"]
-#        env:
-#        - name: DATABASE
-#          value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200521185001277100000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"
-#      restartPolicy: Never
-
----
-
-#
 # Autoscale pods to have minumum of 2 pods up to 10 pods
 # depending on CPU average load
 #
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: squad-web-autoscale
+  name: qareports-web-autoscale
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: squad-web-deployment
+    name: qareports-web-deployment
   minReplicas: 1
   maxReplicas: 10
   targetCPUUtilizationPercentage: 50
@@ -42,15 +18,15 @@ spec:
 ---
 
 #
-# Expose squad-web pods externally
+# Expose qareports-web pods externally
 #
 apiVersion: v1
 kind: Service
 metadata:
-  name: squad-web-service
+  name: qareports-web-service
 spec:
   selector:
-    app: squad-web
+    app: qareports-web
   ports:
     - port: 80
   type: LoadBalancer
@@ -60,29 +36,29 @@ spec:
 ---
 
 #
-# Deploy initially one pod of squad-web container
+# Deploy initially one pod of qareports-web container
 #
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: squad-web-deployment
+  name: qareports-web-deployment
   labels:
-    app: squad-web
+    app: qareports-web
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: squad-web
+      app: qareports-web
   template:
     metadata:
       labels:
-        app: squad-web
+        app: qareports-web
     spec:
       # TODO: do not run as root
       securityContext:
         runAsUser: 0
       containers:
-      - name: squad-web
+      - name: qareports-web
         image: qareports/squad:0.6
         command: ["sh", "-c"]
         args:
