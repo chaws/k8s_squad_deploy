@@ -27,9 +27,9 @@ spec:
         - containerPort: 80
         env:
         - name: DATABASE
-          value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200525114035650700000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"
+          value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200526103502409100000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"
         - name: SQUAD_CELERY_BROKER_URL
-          value: "amqp://192.168.47.4"
+          value: "amqp://192.168.37.22"
         resources:
           requests:
             memory: "128M"

@@ -5,13 +5,13 @@
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: squad-worker-autoscale
+  name: squad-fetch-worker-autoscale
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
     name: squad-fetch-worker-deployment
-  minReplicas: 1
+  minReplicas: 3
   maxReplicas: 10
   targetCPUUtilizationPercentage: 50
 
@@ -39,14 +39,15 @@ spec:
       containers:
       - name: squad-fetch-worker
         image: squadproject/squad:0.7
+        image: qareports/squad:0.6
         command: ["sh", "-c"]
         args:
         - squad-worker --exclude-queues=core_notification,ci_quick
         env:
         - name: DATABASE
-          value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200525114035650700000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"
+          value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200526103502409100000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"
         - name: SQUAD_CELERY_BROKER_URL
-          value: "amqp://192.168.47.4"
+          value: "amqp://192.168.37.22"
         resources:
           requests:
             memory: "128M"

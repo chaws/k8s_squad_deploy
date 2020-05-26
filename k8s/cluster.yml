@@ -9,29 +9,29 @@ metadata:
   version: "1.16"
   # I need to make it use a custom security group so that it'll be added to RDS allowed security groups
 vpc:
-  id: "vpc-03eacf5b68d081df0"
+  id: "vpc-0ca76d0fd7625cc5b"
   cidr: "192.168.0.0/16"
   nat:
     gateway: Disable
   subnets:
     private:
       us-east-1d:
-          id: "subnet-057770b8369be4dfb"
+          id: "subnet-0dee79e9e8eb42409"
           cidr: "192.168.96.0/19"
       us-east-1c:
-          id: "subnet-0e2ff005295177be9"
+          id: "subnet-07ace1ad935ac1a55"
           cidr: "192.168.64.0/19"
     public:
       us-east-1d:
-          id: "subnet-01d20bed55be8498f"
+          id: "subnet-05281256c75790d05"
           cidr: "192.168.32.0/19"
       us-east-1c:
-          id: "subnet-07900957bb8081410"
+          id: "subnet-0c8d73f7c56cd3f1a"
           cidr: "192.168.0.0/19"
 
 nodeGroups:
   - name: ng-1
-    instanceType: t3a.medium
+    instanceType: t3a.small
     desiredCapacity: 1
 
 fargateProfiles:
