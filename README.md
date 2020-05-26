@@ -42,3 +42,13 @@ Also, it's worh noting resources being created:
   * 1 for staging namespace pods
   * 1 for default, kube-system and kubernetes-dashboard namespace
 * Some roles and security groups and NET/Internet gateways
+
+# NOTES
+
+* Starting celery with '--without-mingle' prevented it from crashing everytime a
+  new worker was started in parallel. More info: https://stackoverflow.com/questions/55249197/what-are-the-consequences-of-disabling-gossip-mingle-and-heartbeat-for-celery-w
+
+# References
+
+Posts that helped me A LOT understanding AWS Networking
+https://nickcharlton.net/posts/terraform-aws-vpc.html and https://www.theguild.nl/cost-saving-with-nat-instances/#the-ec2-instance

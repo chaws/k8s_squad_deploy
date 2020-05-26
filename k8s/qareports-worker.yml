@@ -41,7 +41,7 @@ spec:
         image: squadproject/squad:0.7
         command: ["sh", "-c"]
         args:
-        - squad-worker --exclude-queues=ci_fetch
+        - squad-worker --exclude-queues=ci_fetch --concurrency=3 --without-mingle
         env:
         - name: DATABASE
           value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200526103502409100000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"
