@@ -41,12 +41,12 @@ spec:
         image: squadproject/squad:0.7
         command: ["sh", "-c"]
         args:
-        - squad-worker --exclude-queues=core_notification,ci_quick --concurrency=1 --without-mingle
+        - squad-worker --exclude-queues=ci_poll,ci_quick,core_notification,core_postprocess,core_quick,core_reporting --concurrency=1 --without-mingle
         env:
         - name: DATABASE
-          value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200526103502409100000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"
+          value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200527105912595800000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"
         - name: SQUAD_CELERY_BROKER_URL
-          value: "amqp://192.168.37.22"
+          value: "amqp://192.168.53.153"
         resources:
           requests:
             memory: "512M"

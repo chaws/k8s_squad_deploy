@@ -9,24 +9,24 @@ metadata:
   version: "1.16"
   # I need to make it use a custom security group so that it'll be added to RDS allowed security groups
 vpc:
-  id: "vpc-0ca76d0fd7625cc5b"
+  id: "vpc-002a3b819b8de6be5"
   cidr: "192.168.0.0/16"
   nat:
     gateway: Disable
   subnets:
     private:
       us-east-1d:
-          id: "subnet-0dee79e9e8eb42409"
+          id: "subnet-0a09da92f67b7d890"
           cidr: "192.168.96.0/19"
       us-east-1c:
-          id: "subnet-07ace1ad935ac1a55"
+          id: "subnet-00590379ca8660417"
           cidr: "192.168.64.0/19"
     public:
       us-east-1d:
-          id: "subnet-05281256c75790d05"
+          id: "subnet-0e0d942fa29c6cd2b"
           cidr: "192.168.32.0/19"
       us-east-1c:
-          id: "subnet-0c8d73f7c56cd3f1a"
+          id: "subnet-0bdf3cfc5344cd4ce"
           cidr: "192.168.0.0/19"
 
 nodeGroups:
@@ -35,11 +35,6 @@ nodeGroups:
     desiredCapacity: 1
 
 fargateProfiles:
-  - name: fp-default
-    selectors:
-      - namespace: default
-      - namespace: kube-system
-      - namespace: kubernetes-dashboard
   - name: fp-staging
     selectors:
       - namespace: qareports-staging

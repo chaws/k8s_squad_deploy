@@ -44,9 +44,9 @@ spec:
         - squad-worker --exclude-queues=ci_fetch --concurrency=3 --without-mingle
         env:
         - name: DATABASE
-          value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200526103502409100000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"
+          value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200527105912595800000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"
         - name: SQUAD_CELERY_BROKER_URL
-          value: "amqp://192.168.37.22"
+          value: "amqp://192.168.53.153"
         resources:
           requests:
             memory: "128M"

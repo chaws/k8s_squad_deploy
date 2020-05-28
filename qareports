@@ -1,0 +1,40 @@
+#!/bin/sh
+
+BIN=./bin
+KUBECTL=./bin/kubectl
+EKSCTL=./bin/eksctl
+
+set -eu
+
+if [ $# -lt 1 ]; then
+    echo "usage: $0 dev|staging|production"
+    exit 1
+fi
+
+environment=$1
+shift
+
+# Set up the environment
+
+# Build VPC, NAT, RabbitMQ and PostgresSQL
+cd terraform && echo yes | ./terraform apply && cd ..
+
+# Pass VPC and subnet ids to k8s/cluster.yml (command fails at the end trying to display created resources, it's OK)
+./bin/eksctl create cluster -f k8s/cluster.yml || true
+
+# Pass RabbitMQ and PostgreSQL host to deployment files
+
+# Set up application deployments/pods/services/autoscalers
+alias k=./bin/kubectl
+k apply -f k8s/metrics-server-aws.yml  # fetch metrics from k8s API to feed autoscalers
+k apply -f k8s/qareports-namespaces.yml  # start job to apply migration, delete when finish
+k config set-context --current --namespace=$environment
+k apply -f k8s/qareports-migration.yml  # start job to apply migration, delete when finish
+k delete -f k8s/qareports-migration.yml  # delete completed migration job
+k apply -f k8s/qareports-fetch-worker.yml  # startup fetch worker deploy
+k apply -f k8s/qareports-worker.yml  # startup worker deploy
+k apply -f k8s/qareports-listener.yml  # startup listener deploy
+k apply -f k8s/qareports-scheduler.yml  # startup scheduler deploy
+k apply -f k8s/qareports-web.yml  # startup scheduler deploy
+
+# END
