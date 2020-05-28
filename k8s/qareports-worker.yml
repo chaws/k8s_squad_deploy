@@ -18,7 +18,7 @@ spec:
 ---
 
 #
-# Deploy initially one pod of qareports-web container
+# Deploy initially one pod of squad container as worker
 #
 apiVersion: apps/v1
 kind: Deployment
@@ -42,11 +42,9 @@ spec:
         command: ["sh", "-c"]
         args:
         - squad-worker --exclude-queues=ci_fetch --concurrency=3 --without-mingle
-        env:
-        - name: DATABASE
-          value: "ENGINE=django.db.backends.postgresql_psycopg2:NAME=chawsqareports:HOST=terraform-20200527105912595800000001.ch4dokfnfsnh.us-east-1.rds.amazonaws.com:USER=qareports:PASSWORD=easy_password"
-        - name: SQUAD_CELERY_BROKER_URL
-          value: "amqp://192.168.53.153"
+        envFrom:
+        - secretRef:
+            name: qareports-environment
         resources:
           requests:
             memory: "128M"

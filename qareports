@@ -30,13 +30,13 @@ qa_help() {
     echo
     echo "Commands:"
     echo "  up             create the entire setup"
-    echo "  down           destroy the entire setup"
+    echo "  destroy        destroy the entire setup"
     echo "  list           show all services (e.g. frontend, workers, etc)"
     echo "  upgrade        upgrade the entire setup"
     echo "  ssh node|pod   ssh into a node or a pod"
     echo "  logs [-f] pod  display logs for a given pod, pass -f to keep following"
     echo "  dashboard      pop up a kubernetes dashboard"
-    echo "  kubectl        runs kubectl for more experienced users"
+    echo "  k              runs kubectl for more experienced users"
     echo
     echo "Example:"
     echo "  $ ./qareports production upgrade  # probably the most frequent command"
@@ -47,6 +47,7 @@ qa_up() {
 
     if [ $environment == "dev" ]
     then
+        echo "It should take a few minutes, after that you should be able to see squad in action at http://192.168.50.10"
         # Set up 2 virtubalboxes and install kubernetes
         check_dep vagrant
         cd ansible
@@ -72,16 +73,18 @@ qa_up() {
         #k apply -f k8s/qareports-namespaces.yml  # start job to apply migration, delete when finish
     fi
 
+    sleep $((60 * 2))  # wait about 2 minutes for kube-system pods to get started
     qa_deploy_app
     qa_list
 }
 
-qa_down() {
+qa_destroy() {
     echo "Destroying $environment"
     if [ $environment == "dev" ]
     then
         # Set up 2 virtubalboxes and install kubernetes
         check_dep vagrant
+        rm -rf $KUBECONFIG ansible/.vagrant/ssh_config
         cd ansible
         vagrant destroy -f
     else
@@ -96,9 +99,28 @@ qa_down() {
 
 qa_upgrade() {
     echo "Upgraging $environment"
+
     kubectl apply -f k8s/qareports-migration.yml  # start job to apply migration, delete when finish
+    kubectl wait --for=condition=complete --timeout=300s job/qareports-migration  # Wait 5 minutes for migration to complete
+    if [ $? != 0 ]
+    then
+        echo "Failed to apply migration:"
+        kubectl logs job/qareports-migration
+        kubectl delete -f k8s/qareports-migration.yml  # delete failed migration job
+        echo "*** ABORTING UPGRADE!!! ***"
+        exit 1
+    fi
+
     kubectl delete -f k8s/qareports-migration.yml  # delete completed migration job
     qa_deploy_app
+
+    # Check these commands later
+    # kubectl set image deployment/frontend www=image:v2               # Rolling update "www" containers of "frontend" deployment, updating the image
+    # kubectl rollout history deployment/frontend                      # Check the history of deployments including the revision
+    # kubectl rollout undo deployment/frontend                         # Rollback to the previous deployment
+    # kubectl rollout undo deployment/frontend --to-revision=2         # Rollback to a specific revision
+    # kubectl rollout status -w deployment/frontend                    # Watch rolling update status of "frontend" deployment until completion
+    # kubectl rollout restart deployment/frontend                      # Rolling restart of the "frontend" deployment`
 }
 
 qa_list() {
@@ -145,7 +167,7 @@ qa_logs(){
     kubectl logs "$@"
 }
 
-qa_kubectl(){
+qa_k(){
     echo "Running kubectl on $environment"
     kubectl "$@"
 }
@@ -185,11 +207,12 @@ qa_dashboard() {
 
 qa_deploy_app() {
     kubectl config set-context --current --namespace=qareports-$environment
-    kubectl apply -f k8s/qareports-web.yml           # startup frontend deploy
-    kubectl apply -f k8s/qareports-worker.yml        # startup worker (no fetching) deploy
-    kubectl apply -f k8s/qareports-listener.yml      # startup listener deploy
-    kubectl apply -f k8s/qareports-scheduler.yml     # startup scheduler deploy
-    kubectl apply -f k8s/qareports-fetch-worker.yml  # startup fetch worker deploy
+    kubectl apply -f k8s/qareports-secrets-$environment.yml  # set secrets/environment variables
+    kubectl apply -f k8s/qareports-web.yml                   # startup frontend deploy
+    kubectl apply -f k8s/qareports-worker.yml                # startup worker (no fetching) deploy
+    kubectl apply -f k8s/qareports-listener.yml              # startup listener deploy
+    kubectl apply -f k8s/qareports-scheduler.yml             # startup scheduler deploy
+    kubectl apply -f k8s/qareports-fetch-worker.yml          # startup fetch worker deploy
 }
 
 if [ $# -lt 1 ]

@@ -1,3 +1,38 @@
+# qa-reports.linaro.org deployment scripts
+
+You've reached qa-reports deployment scripts. This repository contains all
+that's necessary to hopefuly get an instance of SQUAD set up for production
+use.
+
+Recently we moved from ansible managed EC2 instances in AWS to containerized
+deployment with Kubernetes and EKS, again in AWS.
+
+This repo creates 3 different environments of SQUAD: dev, staging and production.
+Both production and staging are hosted in Fargate nodes shared in a single Kubernetes
+cluster in EKS. The dev environment is accomplished by spinning up 3 local virtual machines,
+being 2 for Kubernetes master/worker nodes and 1 for PostgreSQL/RabbitMQ services.
+
+# Commands
+
+Here is a list of common commands you might want to run to manage qareports:
+
+* `./qareports dev up` creates k8s cluster, RabbitMQ and PostgreSQL instance and deploy squad
+* `./qareports dev upgrade` upgrades SQUAD and its settings
+* `./qareports dev destroy` destroys development deploy
+
+## Cheatsheet of commands to use on a daily basis
+
+Over the time we noticed that some utility commands might have been added to this deploy to ease
+debugging and accessing stuff:
+
+* `./qareports dev list` lists all resources in the cluster, useful to discover pods
+* `./qareports dev ssh master-node` ssh into the master node
+* `./qareports dev ssh qareports-listener-deployment-947f8d9b8-ntfww` ssh into pod running `squad-listener`.
+  * NOTE: be careful when running heavy commands on this pod, it's limited to a maximum of 512MB of RAM, but
+    dont't worry it it crashes, Kubernetes scheduler will just removed crashed one and spawn a new one in no time!
+* `./qareports dev logs -f deployment/qareports-web-deployment` gets the log stream of all pods under qareports-web deployment
+* `./qareports dev k <kubectl-args>` run `kubectl` on development environment
+
 # Create cluster
 
 After spending a couple of weeks trying to come up with a working example of
