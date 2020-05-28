@@ -43,6 +43,23 @@ Also, it's worh noting resources being created:
   * 1 for default, kube-system and kubernetes-dashboard namespace
 * Some roles and security groups and NET/Internet gateways
 
+# Dependencies
+
+There are some tools necessary to manage qareports
+
+* terraform: tool needed for managing resources on cloud like AWS, GKE
+  `https://releases.hashicorp.com/terraform/0.11.14/terraform_0.11.14_linux_amd64.zip`
+
+* ansible: tool for automating node setup
+  Install according to your distro: https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html
+
+* kubectl: tool for managing kubernetes cluster
+  `https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl`
+
+* eksctl: official tool for creating a kubernetes cluster in AWS EKS
+  `https://github.com/weaveworks/eksctl/releases/download/0.20.0/eksctl_Linux_amd64.tar.gz`
+
+
 # NOTES
 
 * Starting celery with '--without-mingle' prevented it from crashing everytime a

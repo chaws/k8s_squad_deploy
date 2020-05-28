@@ -27,7 +27,7 @@
 
 - name: Copy join command to local file
   copy: 
-    dest: "join"
+    dest: "/tmp/join_k8s_cluster"
     content: "{{ join_command.stdout_lines[0] }}"
   become: false
   delegate_to: localhost

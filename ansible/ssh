@@ -3,24 +3,16 @@
 set -eu
 
 if [ $# -lt 1 ]; then
-  echo "usage: $0 ENVIRONMENT [HOST] [COMMAND ...]"
+  echo "usage: $0 HOST [COMMAND ...]"
   exit 1
 fi
 
-env="$1"
-shift
 host="${1:-}"
 if [ -n "$host" ]; then
   shift
 fi
 
-if [ ! $env = dev ]
-then
-    echo Just ssh-ing dev environments so far
-    exit
-fi
-
-inventory=ansible/hosts.$env
+inventory=./hosts
 
 if [ -n "$host" ]; then
   host=$(grep "ansible_host=" "$inventory" | awk '/^\S*'$host'/ {sub("ansible_host=", "", $2); print($2); exit }')

@@ -3,3 +3,5 @@ bin/
 terraform/.terraform*
 terraform.tfstate
 terraform.tfstate.backup
+kubeconfig.*
+*.log

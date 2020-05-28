@@ -1,7 +1,7 @@
 ---
 
 - name: Configure k8s
-  hosts: master,workers
+  hosts: master,worker
   roles:
     - k8s
   handlers:

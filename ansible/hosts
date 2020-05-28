@@ -1,8 +1,7 @@
 [master]
 master-node ansible_host=master-node master_node=1 node_ip=192.168.50.10
-[workers]
-worker-node-1 ansible_host=worker-node-1 worker_node=1 node_ip=192.168.50.11
-worker-node-2 ansible_host=worker-node-2 worker_node=1 node_ip=192.168.50.12
+[worker]
+worker-node ansible_host=worker-node worker_node=1 node_ip=192.168.50.11
 [services]
 services-node ansible_host=services-node
 [all:vars]
