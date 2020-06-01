@@ -55,7 +55,7 @@ resource "aws_db_instance" "qareports_db_instance" {
     apply_immediately = true
     engine = "postgres"
     instance_class = "db.${var.db_node_type}"
-    name = "chawsqareports"
+    name = "${var.environment}qareports"
     username = "qareports"
     password = "easy_password"
     availability_zone = "us-east-1c"

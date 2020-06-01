@@ -9,24 +9,24 @@ metadata:
   version: "1.16"
   # I need to make it use a custom security group so that it'll be added to RDS allowed security groups
 vpc:
-  id: "vpc-002a3b819b8de6be5"
+  id: "vpc-085116ed2a0c4bf5f"
   cidr: "192.168.0.0/16"
   nat:
     gateway: Disable
   subnets:
     private:
       us-east-1d:
-          id: "subnet-0a09da92f67b7d890"
+          id: "subnet-0eed193802ba7b584"
           cidr: "192.168.96.0/19"
       us-east-1c:
-          id: "subnet-00590379ca8660417"
+          id: "subnet-08fda885d66690558"
           cidr: "192.168.64.0/19"
     public:
       us-east-1d:
-          id: "subnet-0e0d942fa29c6cd2b"
+          id: "subnet-0397ab094ac38b559"
           cidr: "192.168.32.0/19"
       us-east-1c:
-          id: "subnet-0bdf3cfc5344cd4ce"
+          id: "subnet-0ee9da5a5096de940"
           cidr: "192.168.0.0/19"
 
 nodeGroups:

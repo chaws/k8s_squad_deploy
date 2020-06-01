@@ -6,6 +6,7 @@ variable "vpc_id" { type = "string" }
 variable "region" { type = "string" }
 variable "node_type" { type = "string" }
 variable "db_node_type" { type = "string" }
+variable "environment" { type = "string" }
 
 provider "aws" {
   region = "${var.region}"

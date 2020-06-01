@@ -2,6 +2,7 @@
 
 set -eu
 
+
 export PATH="./bin:$PATH"
 available_envs="dev|staging|production"
 environment=
@@ -15,6 +16,7 @@ check_dep () {
       exit 1
     fi
 }
+
 
 # Check if all tools are installed, do not go on if any is missing
 for tool in eksctl terraform ansible kubectl
@@ -36,7 +38,7 @@ qa_help() {
     echo "  ssh node|pod   ssh into a node or a pod"
     echo "  logs [-f] pod  display logs for a given pod, pass -f to keep following"
     echo "  dashboard      pop up a kubernetes dashboard"
-    echo "  k              runs kubectl for more experienced users"
+    echo "  k              runs kubectl for k8s specific commands"
     echo
     echo "Example:"
     echo "  $ ./qareports production upgrade  # probably the most frequent command"
@@ -65,9 +67,10 @@ qa_up() {
         kubectl apply -f k8s/qareports-dev-namespace.yml
         kubectl apply -f k8s/metrics-server-dev.yml
     else
-        echo "Creating prod/staging"
-        # cd terraform
-        # echo yes | ./terraform apply
+        echo "Creating terraform dependencies for $environment"
+        cd terraform
+        ./terraform $environment apply
+        exit 0
         # eksctl create cluster -f k8s
         #k apply -f k8s/metrics-server-aws.yml  # fetch metrics from k8s API to feed autoscalers
         #k apply -f k8s/qareports-namespaces.yml  # start job to apply migration, delete when finish
@@ -92,14 +95,12 @@ qa_destroy() {
         # eksctl destroy cluster -f k8s/cluster.yml
         echo "Wait 5 minutes to let EKS cluster to finish destroying"
         sleep $((60 * 5))
-        # cd terraform
-        # echo yes | ./terraform destroy
+        cd terraform
+        ./terraform destroy
     fi
 }
 
-qa_upgrade() {
-    echo "Upgraging $environment"
-
+qa_migrate_db() {
     kubectl apply -f k8s/qareports-migration.yml  # start job to apply migration, delete when finish
     kubectl wait --for=condition=complete --timeout=300s job/qareports-migration  # Wait 5 minutes for migration to complete
     if [ $? != 0 ]
@@ -107,13 +108,17 @@ qa_upgrade() {
         echo "Failed to apply migration:"
         kubectl logs job/qareports-migration
         kubectl delete -f k8s/qareports-migration.yml  # delete failed migration job
-        echo "*** ABORTING UPGRADE!!! ***"
+        echo "*** ABORTING !!! ***"
         exit 1
     fi
 
     kubectl delete -f k8s/qareports-migration.yml  # delete completed migration job
-    qa_deploy_app
+}
 
+qa_upgrade() {
+    echo "Upgraging $environment"
+
+    qa_deploy_app
     # Check these commands later
     # kubectl set image deployment/frontend www=image:v2               # Rolling update "www" containers of "frontend" deployment, updating the image
     # kubectl rollout history deployment/frontend                      # Check the history of deployments including the revision
@@ -121,6 +126,24 @@ qa_upgrade() {
     # kubectl rollout undo deployment/frontend --to-revision=2         # Rollback to a specific revision
     # kubectl rollout status -w deployment/frontend                    # Watch rolling update status of "frontend" deployment until completion
     # kubectl rollout restart deployment/frontend                      # Rolling restart of the "frontend" deployment`
+}
+
+qa_deploy_app() {
+    echo "Deploying $environment"
+
+    kubectl config set-context --current --namespace=qareports-$environment
+    kubectl apply -f k8s/qareports-secrets-$environment.yml  # set secrets/environment variables
+    if $? != 0
+    then 
+        echo "Failed to create secrets variable for $environment"
+        exit 1
+    fi
+    qa_migrate_db
+    kubectl apply -f k8s/qareports-web.yml                   # startup frontend deploy
+    kubectl apply -f k8s/qareports-worker.yml                # startup worker (no fetching) deploy
+    kubectl apply -f k8s/qareports-listener.yml              # startup listener deploy
+    kubectl apply -f k8s/qareports-scheduler.yml             # startup scheduler deploy
+    kubectl apply -f k8s/qareports-fetch-worker.yml          # startup fetch worker deploy
 }
 
 qa_list() {
@@ -205,16 +228,6 @@ qa_dashboard() {
     echo "Bringing kubernetes-dashboard for $environment: not yet implemented :)"
 }
 
-qa_deploy_app() {
-    kubectl config set-context --current --namespace=qareports-$environment
-    kubectl apply -f k8s/qareports-secrets-$environment.yml  # set secrets/environment variables
-    kubectl apply -f k8s/qareports-web.yml                   # startup frontend deploy
-    kubectl apply -f k8s/qareports-worker.yml                # startup worker (no fetching) deploy
-    kubectl apply -f k8s/qareports-listener.yml              # startup listener deploy
-    kubectl apply -f k8s/qareports-scheduler.yml             # startup scheduler deploy
-    kubectl apply -f k8s/qareports-fetch-worker.yml          # startup fetch worker deploy
-}
-
 if [ $# -lt 1 ]
 then
     qa_help
@@ -241,6 +254,7 @@ then
     qa_help
     exit 1
 fi
+
 
 command=$1
 command_exists=$(grep -c qa_$command $0 || :)

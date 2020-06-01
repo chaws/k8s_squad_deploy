@@ -32,6 +32,8 @@ debugging and accessing stuff:
     dont't worry it it crashes, Kubernetes scheduler will just removed crashed one and spawn a new one in no time!
 * `./qareports dev logs -f deployment/qareports-web-deployment` gets the log stream of all pods under qareports-web deployment
 * `./qareports dev k <kubectl-args>` run `kubectl` on development environment
+* `./qareports dev k delete pod qareports-listener-deployment-947f8d9b8-ntfww` deletes a bad pod. If a pod crashes and
+  Kubernetes didn't removed it (but it should've), it's useful to delete that pod so that forces creating a fresh new one.
 
 # Create cluster
 
