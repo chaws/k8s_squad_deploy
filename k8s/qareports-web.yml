@@ -134,6 +134,16 @@ spec:
         envFrom:
         - secretRef:
             name: qareports-environment
+        env:
+        - name: SQUAD_EXTRA_SETTINGS
+          value: "/app/linaro_ldap.py"
+        volumeMounts:
+        - name: qareports-ldap-conf
+          mountPath: /app/linaro_ldap.py
+          subPath: linaro_ldap.py
+        - name: qareports-ldap-conf
+          mountPath: /usr/local/lib/python3.7/dist-packages/linaro_ldap_backends.py
+          subPath: linaro_ldap_backends.py
         resources:
           requests:
             memory: "128M"
@@ -148,3 +158,6 @@ spec:
           name: qareports-web-apache-conf
       - name: static-files
         emptyDir: {}
+      - name: qareports-ldap-conf
+        configMap:
+          name: qareports-ldap-conf
