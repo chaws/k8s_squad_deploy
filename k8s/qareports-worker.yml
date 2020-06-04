@@ -37,6 +37,12 @@ spec:
         app: qareports-worker
     spec:
       containers:
+      - name: aws-smtp-relay
+        image: blueimp/aws-smtp-relay
+        env:
+        - name: AWS_REGION
+          value: "us-east-1"
+
       - name: qareports-worker
         image: squadproject/squad:0.7
         command: ["sh", "-c"]
@@ -45,6 +51,9 @@ spec:
         envFrom:
         - secretRef:
             name: qareports-environment
+        env:
+        - name: SQUAD_EMAIL_PORT
+          value: "1025"
         resources:
           requests:
             memory: "128M"
