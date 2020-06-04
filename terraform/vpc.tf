@@ -175,13 +175,13 @@ resource "aws_security_group" "qareports_nat_instance_sg" {
     # Allow exiting to LAVA servers
     ingress {
         from_port = 5500
-        to_port = 5500
+        to_port = 5599
         protocol = "tcp"
         cidr_blocks = ["${aws_subnet.qareports_private_subnet_1.cidr_block}", "${aws_subnet.qareports_private_subnet_2.cidr_block}"]
     }
     egress {
         from_port = 5500
-        to_port = 5500
+        to_port = 5599
         protocol = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
     }
