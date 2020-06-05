@@ -52,3 +52,12 @@ spec:
           limits:
             memory: "1025M"
             cpu: "1000m"
+        volumeMounts:
+        - name: qareports-secret-key
+          mountPath: /app/secret.dat
+          subPath: secret.dat
+
+      volumes:
+      - name: qareports-secret-key
+        configMap:
+          name: qareports-secret-key
