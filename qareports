@@ -132,11 +132,14 @@ qa_deploy_app() {
     echo "Deploying $environment"
 
     kubectl config set-context --current --namespace=qareports-$environment
-    kubectl apply -f k8s/qareports-secrets-$environment.yml  # set secrets/environment variables
-    if $? != 0
-    then 
-        echo "Failed to create secrets variable for $environment"
-        exit 1
+
+    # set secrets/environment variables
+    if [ $environment == "dev" ]
+    then
+        kubectl apply -f k8s/qareports-secrets-dev.yml
+    else
+        ./scripts/ansible-vault view secrets/${environment}.env | ./scripts/env2secrets.py | kubectl apply -f -
+        ./scripts/ansible-vault view secrets/qareports-ldap.yml | kubectl apply -f -
     fi
     qa_migrate_db
     kubectl apply -f k8s/qareports-web.yml                   # startup frontend deploy
