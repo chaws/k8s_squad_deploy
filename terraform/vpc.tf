@@ -185,6 +185,60 @@ resource "aws_security_group" "qareports_nat_instance_sg" {
         protocol = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
     }
+    # STMP
+    egress {
+        from_port = 1025
+        to_port = 1025
+        protocol = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+}
+
+# Create an instance profile to allow NAT to access SES
+resource "aws_iam_instance_profile" "qa_reports_nat_instance_profile" {
+  name = "qa_reports_nat_instance_profile"
+  role = "${aws_iam_role.qa_reports_nat_ses_role.name}"
+}
+
+resource "aws_iam_role" "qa_reports_nat_ses_role" {
+  name = "qa_reports_nat_ses_role"
+  path = "/"
+
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "sts:AssumeRole",
+            "Principal": {
+               "Service": "ec2.amazonaws.com"
+            },
+            "Sid": ""
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "qa_reports_nat_ses_role_policy" {
+  name = "qa_reports_nat_ses_role_policy"
+  role = "${aws_iam_role.qa_reports_nat_ses_role.name}"
+
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ses:SendRawEmail"
+            ],
+            "Resource": "*"
+        },
+    ]
+}
+EOF
 }
 
 resource "aws_instance" "qareports_nat_instance" {
@@ -196,6 +250,9 @@ resource "aws_instance" "qareports_nat_instance" {
     key_name = "chaws_ssh_key"
     vpc_security_group_ids = ["${aws_security_group.qareports_nat_instance_sg.id}"]
     associate_public_ip_address = true
+
+    # Attach role that will allow access to SES
+    iam_instance_profile = "${aws_iam_instance_profile.qa_reports_nat_instance_profile.name}"
 
     # Place instance in a public subnet
     subnet_id = "${aws_subnet.qareports_public_subnet_1.id}"
