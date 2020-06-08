@@ -21,14 +21,8 @@ resource "aws_security_group" "qareports_mq_sg" {
         cidr_blocks = ["${aws_subnet.qareports_private_subnet_1.cidr_block}", "${aws_subnet.qareports_private_subnet_2.cidr_block}"]
     }
     ingress {
-        from_port   = 5672
-        to_port     = 5672
-        protocol    = "tcp"
-        cidr_blocks = ["${aws_subnet.qareports_private_subnet_1.cidr_block}", "${aws_subnet.qareports_private_subnet_2.cidr_block}"]
-    }
-    ingress {
         from_port   = 5671
-        to_port     = 5671
+        to_port     = 5672
         protocol    = "tcp"
         cidr_blocks = ["${aws_subnet.qareports_private_subnet_1.cidr_block}", "${aws_subnet.qareports_private_subnet_2.cidr_block}"]
     }
