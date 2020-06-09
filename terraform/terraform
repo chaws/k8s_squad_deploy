@@ -2,17 +2,18 @@
 
 set -eu
 
-environment=$1
-re="^(staging|production)$"
-if [[ ! $environment =~ $re ]]
-then
-    echo "usage: ./terraform [staging|production] command"
-    exit 1
-fi
-
-shift
-
-export TF_DATA_DIR=.terraform_${environment}
+#environment=$1
+#re="^(staging|production)$"
+#if [[ ! $environment =~ $re ]]
+#then
+#    echo "usage: ./terraform [staging|production] command"
+#    exit 1
+#fi
+#
+#shift
+#
+#export TF_DATA_DIR=.terraform_${environment}
+export TF_DATA_DIR=.terraform
 
 # init if needed
 if [ ! -d "${TF_DATA_DIR}" ]; then
@@ -23,7 +24,7 @@ if [ $# -eq 0 ]; then
     set -- plan .
 fi
 
-export TF_VAR_environment="$environment"
+#export TF_VAR_environment="$environment"
 export TF_CLI_ARGS="-var-file=shared.tfvars"
 
 terraform "$@"

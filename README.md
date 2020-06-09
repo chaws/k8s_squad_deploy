@@ -35,6 +35,49 @@ debugging and accessing stuff:
 * `./qareports dev k delete pod qareports-listener-deployment-947f8d9b8-ntfww` deletes a bad pod. If a pod crashes and
   Kubernetes didn't removed it (but it should've), it's useful to delete that pod so that forces creating a fresh new one.
 
+# Lessons learned
+
+While learning k8s, some things always worked but some just broke for a reason.
+This section is intended to describe weird behaviors and how to fix, or at least
+start debugging.
+
+## Pod didn't start properly
+
+There are a lot of reasons why a pod won't start:
+* the image doesn't exist
+* there's nowhere or not enough computer power available to deploy it
+  * staging and production pods are supposed to be scheduled under AWS Fargate, and that happens only if you're deploying the pods under the correct namespace
+
+Usually a command to describe what is going on on a pod is
+
+```
+./qareports dev describe pod pod-name
+```
+
+## Emails
+
+I always find it frustrating to understand how emails work so I wanted to make it clear to show how the mechanics of
+emails work for this deploy.
+
+We're currently using AWS Simple Email Service aka SES to send emails. There's a whole page with that in the AWS console.
+It doesn't really require any activation to start using it. On an account that SES was never used, AWS put it under sandbox
+mode, for security. This way SES will send emails to only verified ones. The daily quota is very reduced. For production
+use, you NEED to create a support ticket in AWS asking them to move out of sandbox mode. I won't cover the details here because
+there's a nice documentagion page in AWS website about that.
+
+Once things are cleared in SES, there are 2 ways of use it to send emails: as an SMTP relay or as RESTfull API. We're using the 
+second one for convenience. It's super-super easy to make it work. You just spin up a docker container from https://github.com/blueimp/aws-smtp-relay
+and it proxies all email requests to SES. I didn't go into the internals of this docker image, but it's very tiny.
+
+In this deploy, there's a service running aws-smtp-relay container under kube-system namespace. Pods running in this namespace
+run on an EC2 node created for running k8s stuff, while application pods run under Fargate nodes. Initially I had made this
+container run in qareports-worker pod, but the node where the aws-smtp-relay is running needs to have SES IAM policy
+in order to authenticate to SES. Until date (Jun/2020) I couldn't find a way of doing this mainly because Fargate nodes
+are serverless, so it's like black magic how they make this happen. A workaround was to place aws-smtp-relay in a node
+where I could attach necessary SES policies to make email usage possible.
+
+The two settings to handle EMAIL are `SQUAD_EMAIL_HOST` and `SQUAD_EMAIL_PORT`, which should point to the aws-smtp-relay service.
+
 # Create cluster
 
 After spending a couple of weeks trying to come up with a working example of

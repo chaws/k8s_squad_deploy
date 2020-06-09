@@ -5,8 +5,6 @@ set -eu
 
 export PATH="./bin:$PATH"
 available_envs="dev|staging|production"
-environment=
-command=
 
 
 check_dep () {
@@ -136,10 +134,15 @@ qa_deploy_app() {
     # set secrets/environment variables
     if [ $environment == "dev" ]
     then
+        # TODO: merge all dev files into a single one
         kubectl apply -f k8s/qareports-secrets-dev.yml
+        kubectl apply -f k8s/qareports-ldap-dev.yml
     else
+        # TODO: create a "vars" file for prod and staging, then translate them into
+        # k8s secrets
         ./scripts/ansible-vault view secrets/${environment}.env | ./scripts/env2secrets.py | kubectl apply -f -
         ./scripts/ansible-vault view secrets/qareports-ldap.yml | kubectl apply -f -
+        ./scripts/ansible-vault view secrets/qareports-secret-key.yml | kubectl apply -f -
     fi
     qa_migrate_db
     kubectl apply -f k8s/qareports-web.yml                   # startup frontend deploy

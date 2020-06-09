@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: qareports-listener
-        image: squadproject/squad:0.7
+        image: squadproject/squad
         command: ["sh", "-c"]
         args:
         - squad-listener

@@ -1,0 +1,6 @@
+* see route53 and https
+* Attach ses:SendRawEmail policy to eks-node-group role, I tested sending an email and it worked!
+* Mount secret.dat in all pods
+* standardize resources names to "chaws" so I can easily rename it to whatever I wanted after
+* use vars to store variables for staging/production and use it to create rds password
+

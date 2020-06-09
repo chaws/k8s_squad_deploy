@@ -37,14 +37,8 @@ spec:
         app: qareports-worker
     spec:
       containers:
-      - name: aws-smtp-relay
-        image: blueimp/aws-smtp-relay
-        env:
-        - name: AWS_REGION
-          value: "us-east-1"
-
       - name: qareports-worker
-        image: squadproject/squad:0.7
+        image: squadproject/squad
         command: ["sh", "-c"]
         args:
         - squad-worker --exclude-queues=ci_fetch --concurrency=3 --without-mingle
@@ -54,6 +48,8 @@ spec:
         env:
         - name: SQUAD_EMAIL_PORT
           value: "1025"
+        - name: SQUAD_EMAIL_HOST
+          value: "aws-smtp-relay.kube-system"  # aws-smtp-relay => service name, kube-system => namespace
         resources:
           requests:
             memory: "128M"

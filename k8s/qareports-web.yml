@@ -99,7 +99,7 @@ spec:
     spec:
       initContainers:
       - name: init-qareports-web
-        image: squadproject/squad:0.9
+        image: squadproject/squad
         command: ["cp", "-r", "/app/static", "/qareports_static"]
         volumeMounts:
         - name: static-files
@@ -127,13 +127,15 @@ spec:
             cpu: "500m"
 
       - name: qareports-web
-        image: squadproject/squad:0.9
+        image: squadproject/squad
         command: ["sh", "-c"]
         args:
         - squad --timeout=60 --workers=2 --fast --log-level DEBUG
         envFrom:
         - secretRef:
             name: qareports-environment
+
+        # Inject ldap into container
         env:
         - name: SQUAD_EXTRA_SETTINGS
           value: "/app/linaro_ldap.py"
@@ -144,6 +146,7 @@ spec:
         - name: qareports-ldap-conf
           mountPath: /usr/local/lib/python3.7/dist-packages/linaro_ldap_backends.py
           subPath: linaro_ldap_backends.py
+
         resources:
           requests:
             memory: "128M"
@@ -156,8 +159,10 @@ spec:
       - name: qareports-web-apache-conf
         configMap:
           name: qareports-web-apache-conf
+
       - name: static-files
         emptyDir: {}
+
       - name: qareports-ldap-conf
         configMap:
           name: qareports-ldap-conf

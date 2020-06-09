@@ -235,7 +235,7 @@ resource "aws_iam_role_policy" "qa_reports_nat_ses_role_policy" {
                 "ses:SendRawEmail"
             ],
             "Resource": "*"
-        },
+        }
     ]
 }
 EOF

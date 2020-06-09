@@ -19,12 +19,10 @@ spec:
     spec:
       containers:
       - name: qareports-scheduler
-        image: squadproject/squad:0.7
+        image: squadproject/squad
         command: ["sh", "-c"]
         args:
         - squad-scheduler --schedule=/app/celerybeat-schedule.db
-        ports:
-        - containerPort: 80
         envFrom:
         - secretRef:
             name: qareports-environment

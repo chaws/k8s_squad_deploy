@@ -9,7 +9,7 @@ from base64 import b64encode as b64
 
 # Secret definition and metadata
 print("apiVersion: v1"                 )
-print("kind: Secret:"                  )
+print("kind: Secret"                  )
 print("metadata:"                      )
 print("    name: qareports-environment")
 print("type: Opaque"                   )

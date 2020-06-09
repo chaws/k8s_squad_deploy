@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
       - name: qareports-fetch-worker
-        image: squadproject/squad:0.7
+        image: squadproject/squad
         command: ["sh", "-c"]
         args:
         - squad-worker --exclude-queues=ci_poll,ci_quick,core_notification,core_postprocess,core_quick,core_reporting --concurrency=1 --without-mingle
