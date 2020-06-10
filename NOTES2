@@ -1,0 +1,8 @@
+how to SSH thru instances:
+1. Generate a keypair
+2. Use that keypair's public key to add to all instances
+3. Keep keypair's private key in ansible vault
+4. Then each developer (Me, Milosz, Amro, Antonio) can use GPG to decrypt ssh private key
+4.1. With private key decrypted, one can just log in into instances :)
+
+SQUAD official docker image should be release in linaro/squad github rep

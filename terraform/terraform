@@ -2,32 +2,43 @@
 
 set -eu
 
-#environment=$1
-#re="^(staging|production)$"
-#if [[ ! $environment =~ $re ]]
-#then
-#    echo "usage: ./terraform [staging|production] command"
-#    exit 1
-#fi
-#
-#shift
-#
-#export TF_DATA_DIR=.terraform_${environment}
-export TF_DATA_DIR=.terraform
-
-# init if needed
-if [ ! -d "${TF_DATA_DIR}" ]; then
-    terraform init
+environment=$1
+re="^(staging|production|shared)$"
+if [[ ! $environment =~ $re ]]
+then
+    echo "usage: ./terraform [staging|production|shared] command"
+    exit 1
 fi
 
+if $environment == "shared"
+then
+    cd shared
+else
+    export TF_CLI_ARGS="-var-file=shared.tfvars -var-file=${environment}.tfvars"
+    export TF_VAR_db_password=$(../scripts/ansible-vault view ../secrets/${environment} | grep ^database_password | awk '{print $2}')
+fi
+
+export TF_DATA_DIR=.terraform_${environment}
+
+cat <<EOF > squad_override.tf
+# This file defines which state file to use when running terraform.
+# We use a state file per environment, so this file must be updated
+# every time terraform is run.
+terraform {
+    backend "s3" {
+        bucket = "squad-terraform-state"
+        key = "squad/${environment}/terraform.tfstate"
+        region = "us-east-1"
+    }
+}
+EOF
+
+# It's OK to run init multiple times, it's usefull when adding new providers/plugins
+terraform init
+
+shift
 if [ $# -eq 0 ]; then
     set -- plan .
 fi
 
-#export TF_VAR_environment="$environment"
-export TF_CLI_ARGS="-var-file=shared.tfvars"
-
 terraform "$@"
-
-# set the stage for ansible
-# terraform state pull | ./scripts/state_to_ansible_inventory.py > "../ansible/hosts.${}"

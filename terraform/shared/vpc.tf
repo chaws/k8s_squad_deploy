@@ -39,73 +39,73 @@
 #  are in private subnets."
 # ref: https://docs.aws.amazon.com/eks/latest/userguide/network_reqs.html
 
-resource "aws_vpc" "qareports_vpc" {
+resource "aws_vpc" "squad_vpc" {
     cidr_block = "192.168.0.0/16"
 
     tags = {
-        Name = "qareports vpc"
+        Name = "SQUAD_VPC"
     }
 }
 
-resource "aws_internet_gateway" "qareports_igw" {
-    vpc_id = "${aws_vpc.qareports_vpc.id}"
+resource "aws_internet_gateway" "squad_igw" {
+    vpc_id = "${aws_vpc.squad_vpc.id}"
 
     tags = {
-        Name = "qareports internet gateway"
+        Name = "SQUAD_InternetGateway"
     }
 }
 
 #
 #   Private Subnets
 #
-resource "aws_subnet" "qareports_private_subnet_1" {
-    vpc_id     = "${aws_vpc.qareports_vpc.id}"
+resource "aws_subnet" "squad_private_subnet_1" {
+    vpc_id     = "${aws_vpc.squad_vpc.id}"
     cidr_block = "192.168.96.0/19"
     availability_zone = "us-east-1d"
     tags = {
-        "kubernetes.io/cluster/qareports-eks-cluster" = "shared"
+        "kubernetes.io/cluster/SQUAD_EKSCluster" = "shared"
         "kubernetes.io/role/internal-elb" = 1
-        "Name" = "qareports private subnet 1"
+        "Name" = "SQUAD_PrivateSubnet1"
     }
 }
 
-resource "aws_route_table" "qareports_private_subnet_1_rt" {
-    vpc_id = "${aws_vpc.qareports_vpc.id}"
+resource "aws_route_table" "squad_private_subnet_1_rt" {
+    vpc_id = "${aws_vpc.squad_vpc.id}"
 
     route {
         cidr_block = "0.0.0.0/0"
-        instance_id = "${aws_instance.qareports_nat_instance.id}"
+        instance_id = "${aws_instance.squad_nat_instance.id}"
     }
 }
 
-resource "aws_route_table_association" "qareports_private_subnet_1_rt_association" {
-    subnet_id = "${aws_subnet.qareports_private_subnet_1.id}"
-    route_table_id = "${aws_route_table.qareports_private_subnet_1_rt.id}"
+resource "aws_route_table_association" "squad_private_subnet_1_rt_association" {
+    subnet_id = "${aws_subnet.squad_private_subnet_1.id}"
+    route_table_id = "${aws_route_table.squad_private_subnet_1_rt.id}"
 }
 
-resource "aws_subnet" "qareports_private_subnet_2" {
-    vpc_id     = "${aws_vpc.qareports_vpc.id}"
+resource "aws_subnet" "squad_private_subnet_2" {
+    vpc_id     = "${aws_vpc.squad_vpc.id}"
     cidr_block = "192.168.64.0/19"
     availability_zone = "us-east-1c"
     tags = {
-        "kubernetes.io/cluster/qareports-eks-cluster" = "shared"
+        "kubernetes.io/cluster/SQUAD_EKSCluster" = "shared"
         "kubernetes.io/role/internal-elb" = 1
-        "Name" = "qareports private subnet 2"
+        "Name" = "SQUAD_PrivateSubnet2"
     }
 }
 
-resource "aws_route_table" "qareports_private_subnet_2_rt" {
-    vpc_id = "${aws_vpc.qareports_vpc.id}"
+resource "aws_route_table" "squad_private_subnet_2_rt" {
+    vpc_id = "${aws_vpc.squad_vpc.id}"
 
     route {
         cidr_block = "0.0.0.0/0"
-        instance_id = "${aws_instance.qareports_nat_instance.id}"
+        instance_id = "${aws_instance.squad_nat_instance.id}"
     }
 }
 
-resource "aws_route_table_association" "qareports_private_subnet_2_rt_association" {
-    subnet_id = "${aws_subnet.qareports_private_subnet_2.id}"
-    route_table_id = "${aws_route_table.qareports_private_subnet_2_rt.id}"
+resource "aws_route_table_association" "squad_private_subnet_2_rt_association" {
+    subnet_id = "${aws_subnet.squad_private_subnet_2.id}"
+    route_table_id = "${aws_route_table.squad_private_subnet_2_rt.id}"
 }
 
 #
@@ -113,10 +113,10 @@ resource "aws_route_table_association" "qareports_private_subnet_2_rt_associatio
 #   configure a regular ec2 instance located in the public network to act as
 #   NAT gateway
 #
-resource "aws_security_group" "qareports_nat_instance_sg" {
-    name = "qareports_nat_instance_sg"
+resource "aws_security_group" "squad_nat_instance_security_group" {
+    name = "SQUAD_NATSecurityGroup"
     description = "Allow traffic to pass from the private subnet to the internet"
-    vpc_id = "${aws_vpc.qareports_vpc.id}"
+    vpc_id = "${aws_vpc.squad_vpc.id}"
 
 
     # Allow private subnet to access port 80 and 443
@@ -124,13 +124,13 @@ resource "aws_security_group" "qareports_nat_instance_sg" {
         from_port = 80
         to_port = 80
         protocol = "tcp"
-        cidr_blocks = ["${aws_subnet.qareports_private_subnet_1.cidr_block}", "${aws_subnet.qareports_private_subnet_2.cidr_block}"]
+        cidr_blocks = ["${aws_subnet.squad_private_subnet_1.cidr_block}", "${aws_subnet.qareports_private_subnet_2.cidr_block}"]
     }
     ingress {
         from_port = 443
         to_port = 443
         protocol = "tcp"
-        cidr_blocks = ["${aws_subnet.qareports_private_subnet_1.cidr_block}", "${aws_subnet.qareports_private_subnet_2.cidr_block}"]
+        cidr_blocks = ["${aws_subnet.squad_private_subnet_1.cidr_block}", "${aws_subnet.qareports_private_subnet_2.cidr_block}"]
     }
 
     # Generic firewall rules
@@ -163,7 +163,7 @@ resource "aws_security_group" "qareports_nat_instance_sg" {
         from_port = 22
         to_port = 22
         protocol = "tcp"
-        cidr_blocks = ["${aws_vpc.qareports_vpc.cidr_block}"]
+        cidr_blocks = ["${aws_vpc.squad_vpc.cidr_block}"]
     }
     egress {
         from_port = -1
@@ -177,7 +177,7 @@ resource "aws_security_group" "qareports_nat_instance_sg" {
         from_port = 5500
         to_port = 5599
         protocol = "tcp"
-        cidr_blocks = ["${aws_subnet.qareports_private_subnet_1.cidr_block}", "${aws_subnet.qareports_private_subnet_2.cidr_block}"]
+        cidr_blocks = ["${aws_subnet.squad_private_subnet_1.cidr_block}", "${aws_subnet.qareports_private_subnet_2.cidr_block}"]
     }
     egress {
         from_port = 5500
@@ -185,146 +185,87 @@ resource "aws_security_group" "qareports_nat_instance_sg" {
         protocol = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
     }
-    # STMP
-    egress {
-        from_port = 1025
-        to_port = 1025
-        protocol = "tcp"
-        cidr_blocks = ["0.0.0.0/0"]
-    }
 }
 
-# Create an instance profile to allow NAT to access SES
-resource "aws_iam_instance_profile" "qa_reports_nat_instance_profile" {
-  name = "qa_reports_nat_instance_profile"
-  role = "${aws_iam_role.qa_reports_nat_ses_role.name}"
-}
-
-resource "aws_iam_role" "qa_reports_nat_ses_role" {
-  name = "qa_reports_nat_ses_role"
-  path = "/"
-
-  assume_role_policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": "sts:AssumeRole",
-            "Principal": {
-               "Service": "ec2.amazonaws.com"
-            },
-            "Sid": ""
-        }
-    ]
-}
-EOF
-}
-
-resource "aws_iam_role_policy" "qa_reports_nat_ses_role_policy" {
-  name = "qa_reports_nat_ses_role_policy"
-  role = "${aws_iam_role.qa_reports_nat_ses_role.name}"
-
-  policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "ses:SendRawEmail"
-            ],
-            "Resource": "*"
-        }
-    ]
-}
-EOF
-}
-
-resource "aws_instance" "qareports_nat_instance" {
+resource "aws_instance" "squad_nat_instance" {
     tags = {
-        Name = "qareports nat instance"
+        Name = "SQUAD_NAT"
     }
     ami = "ami-0b383171" # us-east-1, 16.04LTS, hvm:ebs-ssd
     instance_type = "t3a.micro"
-    key_name = "chaws_ssh_key"
-    vpc_security_group_ids = ["${aws_security_group.qareports_nat_instance_sg.id}"]
+    key_name = "${aws_key_pair.squad_ssh_key.key_name}"
+    vpc_security_group_ids = ["${aws_security_group.squad_nat_instance_security_group.id}"]
     associate_public_ip_address = true
 
-    # Attach role that will allow access to SES
-    iam_instance_profile = "${aws_iam_instance_profile.qa_reports_nat_instance_profile.name}"
-
     # Place instance in a public subnet
-    subnet_id = "${aws_subnet.qareports_public_subnet_1.id}"
-    availability_zone = "${aws_subnet.qareports_public_subnet_1.availability_zone}"
+    subnet_id = "${aws_subnet.squad_public_subnet_1.id}"
+    availability_zone = "${aws_subnet.squad_public_subnet_1.availability_zone}"
 
     # Disable check if network packages belong to the instance
     # needed for NAT instances
     source_dest_check = false 
 
     # Turn on ip forwarding and enable NAT translation
-    user_data = "${file("scripts/nat_config.sh")}"
+    user_data = "${file("../scripts/nat_config.sh")}"
 }
 
-resource "aws_eip" "qareports_nat_eip" {
-    instance = "${aws_instance.qareports_nat_instance.id}"
+resource "aws_eip" "squad_nat_eip" {
+    instance = "${aws_instance.squad_nat_instance.id}"
     vpc = true
-    depends_on = ["aws_internet_gateway.qareports_igw"]
+    depends_on = ["aws_internet_gateway.squad_igw"]
 }
 
 #
 #   Public Subnets
 #
-resource "aws_subnet" "qareports_public_subnet_1" {
-    vpc_id     = "${aws_vpc.qareports_vpc.id}"
+resource "aws_subnet" "squad_public_subnet_1" {
+    vpc_id     = "${aws_vpc.squad_vpc.id}"
     cidr_block = "192.168.32.0/19"
     availability_zone = "us-east-1d"
     map_public_ip_on_launch = true
     tags = {
-        "kubernetes.io/cluster/qareports-eks-cluster" = "shared"
+        "kubernetes.io/cluster/SQUAD_EKSCluster" = "shared"
         "kubernetes.io/role/elb" = 1
-        "Name" = "qareports public subnet 1"
+        "Name" = "SQUAD_PublicSubnet1"
     }
 }
 
-resource "aws_route_table" "qareports_public_subnet_1_rt" {
-    vpc_id = "${aws_vpc.qareports_vpc.id}"
+resource "aws_route_table" "squad_public_subnet_1_rt" {
+    vpc_id = "${aws_vpc.squad_vpc.id}"
 
     route {
         cidr_block = "0.0.0.0/0"
-        gateway_id = "${aws_internet_gateway.qareports_igw.id}"
+        gateway_id = "${aws_internet_gateway.squad_igw.id}"
     }
 }
 
-resource "aws_route_table_association" "qareports_public_subnet_1_rt_association" {
-    subnet_id = "${aws_subnet.qareports_public_subnet_1.id}"
-    route_table_id = "${aws_route_table.qareports_public_subnet_1_rt.id}"
+resource "aws_route_table_association" "squad_public_subnet_1_rt_association" {
+    subnet_id = "${aws_subnet.squad_public_subnet_1.id}"
+    route_table_id = "${aws_route_table.squad_public_subnet_1_rt.id}"
 }
 
-resource "aws_subnet" "qareports_public_subnet_2" {
-    vpc_id     = "${aws_vpc.qareports_vpc.id}"
+resource "aws_subnet" "squad_public_subnet_2" {
+    vpc_id     = "${aws_vpc.squad_vpc.id}"
     cidr_block = "192.168.0.0/19"
     availability_zone = "us-east-1c"
     map_public_ip_on_launch = true
     tags = {
-        "kubernetes.io/cluster/qareports-eks-cluster" = "shared"
+        "kubernetes.io/cluster/SQUAD_EKSCluster" = "shared"
         "kubernetes.io/role/elb" = 1
-        "Name" = "qareports public subnet 2"
+        "Name" = "SQUAD_PublicSubnet2"
     }
 }
 
-resource "aws_route_table" "qareports_public_subnet_2_rt" {
-    vpc_id = "${aws_vpc.qareports_vpc.id}"
+resource "aws_route_table" "squad_public_subnet_2_rt" {
+    vpc_id = "${aws_vpc.squad_vpc.id}"
 
     route {
         cidr_block = "0.0.0.0/0"
-        gateway_id = "${aws_internet_gateway.qareports_igw.id}"
+        gateway_id = "${aws_internet_gateway.squad_igw.id}"
     }
 }
 
-resource "aws_route_table_association" "qareports_public_subnet_2_rt_association" {
-    subnet_id = "${aws_subnet.qareports_public_subnet_2.id}"
-    route_table_id = "${aws_route_table.qareports_public_subnet_2_rt.id}"
+resource "aws_route_table_association" "squad_public_subnet_2_rt_association" {
+    subnet_id = "${aws_subnet.squad_public_subnet_2.id}"
+    route_table_id = "${aws_route_table.squad_public_subnet_2_rt.id}"
 }
-
-# Output VPC and subnets to ../k8s/cluster.yml
