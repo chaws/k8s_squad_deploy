@@ -10,17 +10,22 @@ then
     exit 1
 fi
 
-if $environment == "shared"
+# Make sure auto-generated directory exists
+[ -d generated ] || mkdir generated
+
+if [ "$environment" == "shared" ]
 then
     cd shared
 else
-    export TF_CLI_ARGS="-var-file=shared.tfvars -var-file=${environment}.tfvars"
+    export TF_CLI_ARGS="-var-file=generated/shared.tfvars -var-file=${environment}.tfvars"
+    export TF_VAR_db_name=$(../scripts/ansible-vault view ../secrets/${environment}     | grep ^database_name     | awk '{print $2}')
+    export TF_VAR_db_username=$(../scripts/ansible-vault view ../secrets/${environment} | grep ^database_username | awk '{print $2}')
     export TF_VAR_db_password=$(../scripts/ansible-vault view ../secrets/${environment} | grep ^database_password | awk '{print $2}')
 fi
 
 export TF_DATA_DIR=.terraform_${environment}
 
-cat <<EOF > squad_override.tf
+cat <<EOF > state.tf
 # This file defines which state file to use when running terraform.
 # We use a state file per environment, so this file must be updated
 # every time terraform is run.

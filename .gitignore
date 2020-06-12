@@ -1,7 +1,9 @@
 .vagrant
 bin/
-terraform/.terraform*
+.terraform*
+terraform/generated
 terraform.tfstate
 terraform.tfstate.backup
-kubeconfig.*
+state.tf
+kubeconfig
 *.log

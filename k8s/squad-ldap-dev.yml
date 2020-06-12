@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: qareports-ldap-conf
+  name: squad-ldap-conf
 data:
   linaro_ldap_backends.py: |-
     # Empty for dev

@@ -17,16 +17,16 @@ check_dep () {
 
 
 # Check if all tools are installed, do not go on if any is missing
-for tool in eksctl terraform ansible kubectl
+for tool in terraform ansible kubectl
 do
     check_dep $tool
 done
 
 
-qa_help() {
-    echo "This is qareports' deploy management tool."
+squad_help() {
+    echo "This is squad' deploy management tool."
     echo
-    echo "Usage: ./qareports $available_envs [command[args]]"
+    echo "Usage: ./squad $available_envs [command[args]]"
     echo
     echo "Commands:"
     echo "  up             create the entire setup"
@@ -39,10 +39,10 @@ qa_help() {
     echo "  k              runs kubectl for k8s specific commands"
     echo
     echo "Example:"
-    echo "  $ ./qareports production upgrade  # probably the most frequent command"
+    echo "  $ ./squad production upgrade  # probably the most frequent command"
 }
 
-qa_up() {
+squad_up() {
     echo "Creating $environment"
 
     if [ $environment == "dev" ]
@@ -62,24 +62,28 @@ qa_up() {
             master-node:/home/vagrant/.kube/config $KUBECONFIG 
 
         # Prepare k8s environment
-        kubectl apply -f k8s/qareports-dev-namespace.yml
+        kubectl apply -f k8s/squad-dev-namespace.yml
         kubectl apply -f k8s/metrics-server-dev.yml
     else
         echo "Creating terraform dependencies for $environment"
         cd terraform
+        echo "Shared resources need to be managed first"
+        ./terraform shared apply
+        echo
+        echo "Done"
+        echo
+        echo "${environment} resources are about to be managed"
         ./terraform $environment apply
-        exit 0
-        # eksctl create cluster -f k8s
         #k apply -f k8s/metrics-server-aws.yml  # fetch metrics from k8s API to feed autoscalers
-        #k apply -f k8s/qareports-namespaces.yml  # start job to apply migration, delete when finish
+        #k apply -f k8s/squad-namespaces.yml  # start job to apply migration, delete when finish
     fi
 
     sleep $((60 * 2))  # wait about 2 minutes for kube-system pods to get started
-    qa_deploy_app
-    qa_list
+    squad_deploy_app
+    squad_list
 }
 
-qa_destroy() {
+squad_destroy() {
     echo "Destroying $environment"
     if [ $environment == "dev" ]
     then
@@ -90,33 +94,33 @@ qa_destroy() {
         vagrant destroy -f
     else
         # Destroy production/staging
-        # eksctl destroy cluster -f k8s/cluster.yml
         echo "Wait 5 minutes to let EKS cluster to finish destroying"
         sleep $((60 * 5))
         cd terraform
-        ./terraform destroy
+        ./terraform ${environment} destroy
+        ./terraform shared destroy
     fi
 }
 
-qa_migrate_db() {
-    kubectl apply -f k8s/qareports-migration.yml  # start job to apply migration, delete when finish
-    kubectl wait --for=condition=complete --timeout=300s job/qareports-migration  # Wait 5 minutes for migration to complete
+squad_migrate_db() {
+    kubectl apply -f k8s/squad-migration.yml  # start job to apply migration, delete when finish
+    kubectl wait --for=condition=complete --timeout=300s job/squad-migration  # Wait 5 minutes for migration to complete
     if [ $? != 0 ]
     then
         echo "Failed to apply migration:"
-        kubectl logs job/qareports-migration
-        kubectl delete -f k8s/qareports-migration.yml  # delete failed migration job
+        kubectl logs job/squad-migration
+        kubectl delete -f k8s/squad-migration.yml  # delete failed migration job
         echo "*** ABORTING !!! ***"
         exit 1
     fi
 
-    kubectl delete -f k8s/qareports-migration.yml  # delete completed migration job
+    kubectl delete -f k8s/squad-migration.yml  # delete completed migration job
 }
 
-qa_upgrade() {
+squad_upgrade() {
     echo "Upgraging $environment"
 
-    qa_deploy_app
+    squad_deploy_app
     # Check these commands later
     # kubectl set image deployment/frontend www=image:v2               # Rolling update "www" containers of "frontend" deployment, updating the image
     # kubectl rollout history deployment/frontend                      # Check the history of deployments including the revision
@@ -126,42 +130,34 @@ qa_upgrade() {
     # kubectl rollout restart deployment/frontend                      # Rolling restart of the "frontend" deployment`
 }
 
-qa_deploy_app() {
+squad_deploy_app() {
     echo "Deploying $environment"
 
-    kubectl config set-context --current --namespace=qareports-$environment
+    kubectl config set-context --current --namespace=squad-$environment
 
     # set secrets/environment variables
     if [ $environment == "dev" ]
     then
         # TODO: merge all dev files into a single one
-        kubectl apply -f k8s/qareports-secrets-dev.yml
-        kubectl apply -f k8s/qareports-ldap-dev.yml
+        kubectl apply -f k8s/squad-secrets-dev.yml
+        kubectl apply -f k8s/squad-ldap-dev.yml
     else
         # TODO: create a "vars" file for prod and staging, then translate them into
         # k8s secrets
         ./scripts/ansible-vault view secrets/${environment}.env | ./scripts/env2secrets.py | kubectl apply -f -
-        ./scripts/ansible-vault view secrets/qareports-ldap.yml | kubectl apply -f -
-        ./scripts/ansible-vault view secrets/qareports-secret-key.yml | kubectl apply -f -
+        ./scripts/ansible-vault view secrets/squad-ldap.yml | kubectl apply -f -
+        ./scripts/ansible-vault view secrets/squad-secret-key.yml | kubectl apply -f -
     fi
-    qa_migrate_db
-    kubectl apply -f k8s/qareports-web.yml                   # startup frontend deploy
-    kubectl apply -f k8s/qareports-worker.yml                # startup worker (no fetching) deploy
-    kubectl apply -f k8s/qareports-listener.yml              # startup listener deploy
-    kubectl apply -f k8s/qareports-scheduler.yml             # startup scheduler deploy
-    kubectl apply -f k8s/qareports-fetch-worker.yml          # startup fetch worker deploy
+    squad_migrate_db
+    kubectl apply -f k8s/squad-web.yml                   # startup frontend deploy
+    kubectl apply -f k8s/squad-worker.yml                # startup worker (no fetching) deploy
+    kubectl apply -f k8s/squad-listener.yml              # startup listener deploy
+    kubectl apply -f k8s/squad-scheduler.yml             # startup scheduler deploy
+    kubectl apply -f k8s/squad-fetch-worker.yml          # startup fetch worker deploy
 }
 
-qa_list() {
+squad_list() {
     echo "Showing services for $environment"
-    echo "Non-kubernetes nodes"
-    if [ $environment == "dev" ]
-    then
-        cd ansible/ && vagrant status && cd ..
-    else
-        # Figure how to show production/staging RabbitMQ, Postgres and NAT nodes
-        echo "listing staging/production nodes"
-    fi
     echo
     echo "Nodes"
     kubectl get nodes -o wide
@@ -184,29 +180,29 @@ qa_list() {
     kubectl get namespaces
 }
 
-qa_logs(){
+squad_logs(){
     if [ $# -lt 1 ]
     then
         echo "'$0 $environment logs' requires a pod (check 'list' command)"
         echo
-        qa_help
+        squad_help
         exit 1
     fi
     echo "Showing logs for $environment"
     kubectl logs "$@"
 }
 
-qa_k(){
+squad_k(){
     echo "Running kubectl on $environment"
     kubectl "$@"
 }
 
-qa_ssh() {
+squad_ssh() {
     if [ $# -lt 1 ]
     then
         echo "'$0 $environment ssh' requires a node or pod (check 'list' command)"
         echo
-        qa_help
+        squad_help
         exit 1
     fi
 
@@ -230,26 +226,34 @@ qa_ssh() {
     fi
 }
 
-qa_dashboard() {
+squad_dashboard() {
     echo "Bringing kubernetes-dashboard for $environment: not yet implemented :)"
 }
 
 if [ $# -lt 1 ]
 then
-    qa_help
+    squad_help
     exit 1
 fi
 
 
 environment=$1
-export KUBECONFIG="./kubeconfig.$environment"
 shift
 re="^($available_envs)$"
 if [[ ! $environment =~ $re ]]
 then
     echo "$environment does not match any of $available_envs"
-    qa_help
+    squad_help
     exit 1
+fi
+
+
+# Set kubeconfig for kubectl to work properly
+if [ $environment == "dev" ]
+then
+    export KUBECONFIG="./kubeconfig"
+else
+    export KUBECONFIG="./terraform/generated/kubeconfig"
 fi
 
 
@@ -257,21 +261,21 @@ if [ $# -lt 1 ]
 then
     echo "'command' is missing"
     echo
-    qa_help
+    squad_help
     exit 1
 fi
 
 
 command=$1
-command_exists=$(grep -c qa_$command $0 || :)
+command_exists=$(grep -c squad_$command $0 || :)
 shift
 if [ $command_exists == 0 ]
 then
     echo "'$command' does not match any valid command"
     echo
-    qa_help
+    squad_help
     exit 1
 fi
 
-command=qa_$command
+command=squad_$command
 $command "$@"

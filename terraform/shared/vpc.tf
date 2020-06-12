@@ -4,14 +4,14 @@
 # 
 #          +---------------------------------------------------------------------+
 #          |                                VPC                                  |
-#          |                          "192.168.0.0/16"                           |
+#          |                          "172.31.0.0/16"                            |
 #          |                             65534 hosts                             |
 #          |   +-------------------------------------------------------------+   |
 #          |   |   Public Subnets with routing table to Internet Gateway     |   |
 #          |   |   +--------------------------+--------------------------+   |   |
-#          |   |   |         Subnet1          |         Subnet2          |   |   |
-#          |   |   |     "192.168.32.0/19"    |     "192.168.0.0/19"     |   |   |
-#          |   |   |        8190 hosts        |        8190 hosts        |   |   |
+#          |   |   |   Subnet1 (us-east-1a)   |   Subnet2 (us-east-1b)   |   |   |
+#          |   |   |     "172.31.1.0/24"      |     "172.31.2.0/24"      |   |   |
+#          |   |   |        239 hosts         |        245 hosts         |   |   |
 #          |   |   +--------------------------+--------------------------+   |   |
 #          |   +-------------------------------------------------------------+   |
 #          |                                                                     |
@@ -19,9 +19,9 @@
 #          |   |   Private Subnets with routing table to NAT Instance        |   |
 #          |   |       (resources need to get out on the Internet)           |   |
 #          |   |   +--------------------------+--------------------------+   |   |
-#          |   |   |       Subnet1            |          Subnet2         |   |   |
-#          |   |   |     "192.168.96.0/19"    |     "192.168.64.0/19"    |   |   |
-#          |   |   |        8190 hosts        |        8190 hosts        |   |   |
+#          |   |   |   Subnet1 (us-east-1a)   |   Subnet2 (us-east-1b)   |   |   |
+#          |   |   |     "172.31.3.0/24"      |     "172.31.4.0/24"      |   |   |
+#          |   |   |        239 hosts         |        245 hosts         |   |   |
 #          |   |   +--------------------------+--------------------------+   |   |
 #          |   +------------------------------------------------------------ +   |
 #          +-------------------------------------------------------------------- +
@@ -40,7 +40,7 @@
 # ref: https://docs.aws.amazon.com/eks/latest/userguide/network_reqs.html
 
 resource "aws_vpc" "squad_vpc" {
-    cidr_block = "192.168.0.0/16"
+    cidr_block = "172.31.0.0/16"
 
     tags = {
         Name = "SQUAD_VPC"
@@ -60,10 +60,10 @@ resource "aws_internet_gateway" "squad_igw" {
 #
 resource "aws_subnet" "squad_private_subnet_1" {
     vpc_id     = "${aws_vpc.squad_vpc.id}"
-    cidr_block = "192.168.96.0/19"
-    availability_zone = "us-east-1d"
+    cidr_block = "172.31.3.0/24"
+    availability_zone = "${var.region}a"
     tags = {
-        "kubernetes.io/cluster/SQUAD_EKSCluster" = "shared"
+        "kubernetes.io/cluster/${var.cluster_name}" = "shared"
         "kubernetes.io/role/internal-elb" = 1
         "Name" = "SQUAD_PrivateSubnet1"
     }
@@ -85,10 +85,10 @@ resource "aws_route_table_association" "squad_private_subnet_1_rt_association" {
 
 resource "aws_subnet" "squad_private_subnet_2" {
     vpc_id     = "${aws_vpc.squad_vpc.id}"
-    cidr_block = "192.168.64.0/19"
-    availability_zone = "us-east-1c"
+    cidr_block = "172.31.4.0/24"
+    availability_zone = "${var.region}b"
     tags = {
-        "kubernetes.io/cluster/SQUAD_EKSCluster" = "shared"
+        "kubernetes.io/cluster/${var.cluster_name}" = "shared"
         "kubernetes.io/role/internal-elb" = 1
         "Name" = "SQUAD_PrivateSubnet2"
     }
@@ -109,6 +109,61 @@ resource "aws_route_table_association" "squad_private_subnet_2_rt_association" {
 }
 
 #
+#   Public Subnets
+#
+resource "aws_subnet" "squad_public_subnet_1" {
+    vpc_id     = "${aws_vpc.squad_vpc.id}"
+    cidr_block = "172.31.1.0/24"
+    availability_zone = "${var.region}a"
+    map_public_ip_on_launch = true
+    tags = {
+        "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+        "kubernetes.io/role/elb" = 1
+        "Name" = "SQUAD_PublicSubnet1"
+    }
+}
+
+resource "aws_route_table" "squad_public_subnet_1_rt" {
+    vpc_id = "${aws_vpc.squad_vpc.id}"
+
+    route {
+        cidr_block = "0.0.0.0/0"
+        gateway_id = "${aws_internet_gateway.squad_igw.id}"
+    }
+}
+
+resource "aws_route_table_association" "squad_public_subnet_1_rt_association" {
+    subnet_id = "${aws_subnet.squad_public_subnet_1.id}"
+    route_table_id = "${aws_route_table.squad_public_subnet_1_rt.id}"
+}
+
+resource "aws_subnet" "squad_public_subnet_2" {
+    vpc_id     = "${aws_vpc.squad_vpc.id}"
+    cidr_block = "172.31.2.0/24"
+    availability_zone = "${var.region}b"
+    map_public_ip_on_launch = true
+    tags = {
+        "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+        "kubernetes.io/role/elb" = 1
+        "Name" = "SQUAD_PublicSubnet2"
+    }
+}
+
+resource "aws_route_table" "squad_public_subnet_2_rt" {
+    vpc_id = "${aws_vpc.squad_vpc.id}"
+
+    route {
+        cidr_block = "0.0.0.0/0"
+        gateway_id = "${aws_internet_gateway.squad_igw.id}"
+    }
+}
+
+resource "aws_route_table_association" "squad_public_subnet_2_rt_association" {
+    subnet_id = "${aws_subnet.squad_public_subnet_2.id}"
+    route_table_id = "${aws_route_table.squad_public_subnet_2_rt.id}"
+}
+
+#
 #   NAT Instance: instead of using an expensive NAT Gateway (0.04/hr + 0.04/GB)
 #   configure a regular ec2 instance located in the public network to act as
 #   NAT gateway
@@ -124,13 +179,13 @@ resource "aws_security_group" "squad_nat_instance_security_group" {
         from_port = 80
         to_port = 80
         protocol = "tcp"
-        cidr_blocks = ["${aws_subnet.squad_private_subnet_1.cidr_block}", "${aws_subnet.qareports_private_subnet_2.cidr_block}"]
+        cidr_blocks = ["${aws_subnet.squad_private_subnet_1.cidr_block}", "${aws_subnet.squad_private_subnet_2.cidr_block}"]
     }
     ingress {
         from_port = 443
         to_port = 443
         protocol = "tcp"
-        cidr_blocks = ["${aws_subnet.squad_private_subnet_1.cidr_block}", "${aws_subnet.qareports_private_subnet_2.cidr_block}"]
+        cidr_blocks = ["${aws_subnet.squad_private_subnet_1.cidr_block}", "${aws_subnet.squad_private_subnet_2.cidr_block}"]
     }
 
     # Generic firewall rules
@@ -177,7 +232,7 @@ resource "aws_security_group" "squad_nat_instance_security_group" {
         from_port = 5500
         to_port = 5599
         protocol = "tcp"
-        cidr_blocks = ["${aws_subnet.squad_private_subnet_1.cidr_block}", "${aws_subnet.qareports_private_subnet_2.cidr_block}"]
+        cidr_blocks = ["${aws_subnet.squad_private_subnet_1.cidr_block}", "${aws_subnet.squad_private_subnet_2.cidr_block}"]
     }
     egress {
         from_port = 5500
@@ -191,7 +246,7 @@ resource "aws_instance" "squad_nat_instance" {
     tags = {
         Name = "SQUAD_NAT"
     }
-    ami = "ami-0b383171" # us-east-1, 16.04LTS, hvm:ebs-ssd
+    ami = "${var.ami_id}"
     instance_type = "t3a.micro"
     key_name = "${aws_key_pair.squad_ssh_key.key_name}"
     vpc_security_group_ids = ["${aws_security_group.squad_nat_instance_security_group.id}"]
@@ -206,66 +261,11 @@ resource "aws_instance" "squad_nat_instance" {
     source_dest_check = false 
 
     # Turn on ip forwarding and enable NAT translation
-    user_data = "${file("../scripts/nat_config.sh")}"
+    user_data = "${file("${path.module}/../scripts/nat_config.sh")}"
 }
 
 resource "aws_eip" "squad_nat_eip" {
     instance = "${aws_instance.squad_nat_instance.id}"
     vpc = true
     depends_on = ["aws_internet_gateway.squad_igw"]
-}
-
-#
-#   Public Subnets
-#
-resource "aws_subnet" "squad_public_subnet_1" {
-    vpc_id     = "${aws_vpc.squad_vpc.id}"
-    cidr_block = "192.168.32.0/19"
-    availability_zone = "us-east-1d"
-    map_public_ip_on_launch = true
-    tags = {
-        "kubernetes.io/cluster/SQUAD_EKSCluster" = "shared"
-        "kubernetes.io/role/elb" = 1
-        "Name" = "SQUAD_PublicSubnet1"
-    }
-}
-
-resource "aws_route_table" "squad_public_subnet_1_rt" {
-    vpc_id = "${aws_vpc.squad_vpc.id}"
-
-    route {
-        cidr_block = "0.0.0.0/0"
-        gateway_id = "${aws_internet_gateway.squad_igw.id}"
-    }
-}
-
-resource "aws_route_table_association" "squad_public_subnet_1_rt_association" {
-    subnet_id = "${aws_subnet.squad_public_subnet_1.id}"
-    route_table_id = "${aws_route_table.squad_public_subnet_1_rt.id}"
-}
-
-resource "aws_subnet" "squad_public_subnet_2" {
-    vpc_id     = "${aws_vpc.squad_vpc.id}"
-    cidr_block = "192.168.0.0/19"
-    availability_zone = "us-east-1c"
-    map_public_ip_on_launch = true
-    tags = {
-        "kubernetes.io/cluster/SQUAD_EKSCluster" = "shared"
-        "kubernetes.io/role/elb" = 1
-        "Name" = "SQUAD_PublicSubnet2"
-    }
-}
-
-resource "aws_route_table" "squad_public_subnet_2_rt" {
-    vpc_id = "${aws_vpc.squad_vpc.id}"
-
-    route {
-        cidr_block = "0.0.0.0/0"
-        gateway_id = "${aws_internet_gateway.squad_igw.id}"
-    }
-}
-
-resource "aws_route_table_association" "squad_public_subnet_2_rt_association" {
-    subnet_id = "${aws_subnet.squad_public_subnet_2.id}"
-    route_table_id = "${aws_route_table.squad_public_subnet_2_rt.id}"
 }

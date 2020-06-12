@@ -6,5 +6,5 @@
 #
 resource "aws_key_pair" "squad_ssh_key" {
     key_name   = "squad_ssh_key"
-    public_key = "${file("${path.module}/../script/squad_public_key")}"
+    public_key = "${file("${path.module}/../scripts/squad_public_key")}"
 }

@@ -1,4 +1,5 @@
 variable "vpc_id"         { type = "string" }
+variable "region"         { type = "string" }
 variable "subnet1_id"     { type = "string" }
 variable "subnet1_cidr"   { type = "string" }
 variable "subnet2_id"     { type = "string" }
@@ -7,13 +8,15 @@ variable "environment"    { type = "string" }
 variable "db_storage"     { type = "string" }
 variable "db_max_storage" { type = "string" }
 variable "db_node_type"   { type = "string" }
+variable "db_name"        { type = "string" }
+variable "db_username"    { type = "string" }
 variable "db_password"    { type = "string" }
 
 # A security group for the database
 resource "aws_security_group" "squad_rds_security_group" {
     name        = "SQUAD_RDSSecurityGroup_${var.environment}"
     description = "Security group for squad database"
-    vpc_id      = "${var.vpc.id}"
+    vpc_id      = "${var.vpc_id}"
 
     # Postgres uses port 5432
     ingress {
@@ -33,7 +36,7 @@ resource "aws_security_group" "squad_rds_security_group" {
 }
 
 resource "aws_db_subnet_group" "squad_rds_subnet_group" {
-    name       = "SQUAD_RDSSubnetGroup_${var.environment}"
+    name       = "${var.environment}squad-rds-subnet-group"
     subnet_ids = ["${var.subnet1_id}", "${var.subnet2_id}"]
 
     tags {
@@ -42,8 +45,8 @@ resource "aws_db_subnet_group" "squad_rds_subnet_group" {
 }
 
 resource "aws_db_parameter_group" "squad_rds_parameter_group" {
-    name        = "SQUAD_RDSParameterGroup_${var.environment}"
-    family      = "postgres9.6"
+    name        = "${var.environment}squad-rds-parameter-group"
+    family      = "postgres11"
     description = "RDS parameter group"
 
     parameter {
@@ -59,10 +62,10 @@ resource "aws_db_instance" "squad_rds_instance" {
     apply_immediately = true
     engine = "postgres"
     instance_class = "db.${var.db_node_type}"
-    name = "${var.environment}squad"
-    username = "squad"
+    name = "${var.db_name}"
+    username = "${var.db_username}"
     password = "${var.db_password}"
-    availability_zone = "us-east-1c"
+    availability_zone = "${var.region}a"
     db_subnet_group_name = "${aws_db_subnet_group.squad_rds_subnet_group.name}"
     parameter_group_name = "${aws_db_parameter_group.squad_rds_parameter_group.name}"
     multi_az = false

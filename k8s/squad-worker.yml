@@ -5,12 +5,12 @@
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: qareports-worker-autoscale
+  name: squad-worker-autoscale
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: qareports-worker-deployment
+    name: squad-worker-deployment
   minReplicas: 1
   maxReplicas: 10
   targetCPUUtilizationPercentage: 50
@@ -23,28 +23,28 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: qareports-worker-deployment
+  name: squad-worker-deployment
   labels:
-    app: qareports-worker
+    app: squad-worker
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: qareports-worker
+      app: squad-worker
   template:
     metadata:
       labels:
-        app: qareports-worker
+        app: squad-worker
     spec:
       containers:
-      - name: qareports-worker
+      - name: squad-worker
         image: squadproject/squad
         command: ["sh", "-c"]
         args:
         - squad-worker --exclude-queues=ci_fetch --concurrency=3 --without-mingle
         envFrom:
         - secretRef:
-            name: qareports-environment
+            name: squad-environment
         env:
         - name: SQUAD_EMAIL_PORT
           value: "1025"

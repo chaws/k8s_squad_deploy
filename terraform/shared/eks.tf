@@ -29,8 +29,8 @@
 #       * Policies:
 #         * AmazonEKSWorkerNodePolicy (aws managed)
 #         * AmazonEKS_CNI_Policy (aws managed)
-#         * AmazonSES_SendRawEmail_Policy: allow pods in these nodes to send emails
 #         * AmazonEC2ContainerRegistryReadOnly (aws managed)
+#         * AmazonSES_SendRawEmail_Policy: allow pods in these nodes to send emails
 #     * SQUAD_EKSFargateRole: role to allow Fargate to manage EC2 resources
 #       * Policies:
 #         * AmazonEKSFargatePodExecutionRolePolicy (aws managed)
@@ -45,7 +45,7 @@
 #
 resource "aws_iam_role" "squad_eks_cluster_role" {
     name = "SQUAD_EKSClusterRole"
-    description = "Allow SQUAD_EKSCluster to manage node groups, fargate nodes and cloudwatch logs"
+    description = "Allow ${var.cluster_name} to manage node groups, fargate nodes and cloudwatch logs"
     force_detach_policies = true
     assume_role_policy = <<POLICY
 {
@@ -82,9 +82,8 @@ POLICY
 #
 #   Policy that allows pods in EKS Node Group to access SES and send email
 #
-resource "aws_iam_role_policy" "squad_eks_node_group_ses_policy" {
+resource "aws_iam_policy" "squad_eks_node_group_ses_policy" {
     name = "SQUAD_EKSNodeGroupSESPolicy"
-    role = "${aws_iam_role.squad_eks_node_group_role.name}"
 
     policy = <<EOF
 {
@@ -168,7 +167,7 @@ resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
 #   Configure CloudWatch logs
 #
 resource "aws_cloudwatch_log_group" "squad_cloudwatch_log_group" {
-    name              = "/aws/eks/squad-eks-cluster/cluster"
+    name              = "/aws/eks/${var.cluster_name}/cluster"
     retention_in_days = 30
     tags = {
         Name = "SQUAD_CloudWatchLogGroup"
@@ -196,9 +195,9 @@ EOF
 #   EKS Cluster
 #
 resource "aws_eks_cluster" "squad_eks_cluster" {
-    name = "SQUAD_EKSCluster"
+    name = "${var.cluster_name}"
     tags = {
-        Name = "SQUAD_EKSCluster"
+        Name = "${var.cluster_name}"
     }
 
     role_arn                  = "${aws_iam_role.squad_eks_cluster_role.arn}"
@@ -208,8 +207,8 @@ resource "aws_eks_cluster" "squad_eks_cluster" {
         subnet_ids = [
             "${aws_subnet.squad_private_subnet_1.id}",
             "${aws_subnet.squad_private_subnet_2.id}",
-            "${aws_subnet.qareports_public_subnet_1.id}",
-            "${aws_subnet.qareports_public_subnet_2.id}"
+            "${aws_subnet.squad_public_subnet_1.id}",
+            "${aws_subnet.squad_public_subnet_2.id}"
         ]
     }
 
@@ -239,6 +238,10 @@ resource "aws_eks_node_group" "squad_eks_node_group" {
         desired_size = 1
         max_size     = 1
         min_size     = 1
+    }
+
+    remote_access {
+       ec2_ssh_key = "${aws_key_pair.squad_ssh_key.key_name}"
     }
 
     depends_on = [

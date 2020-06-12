@@ -3,22 +3,22 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: qareports-migration
+  name: squad-migration
 spec:
   template:
     metadata:
-      name: qareports-migration
+      name: squad-migration
     spec:
       restartPolicy: Never
       containers:
-      - name: qareports-migration
+      - name: squad-migration
         image: squadproject/squad
         command: ["squad-admin"]
         args:
         - migrate
         envFrom:
         - secretRef:
-            name: qareports-environment
+            name: squad-environment
         resources:
           requests:
             memory: "128M"

@@ -5,12 +5,12 @@
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: qareports-web-autoscale
+  name: squad-web-autoscale
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: qareports-web-deployment
+    name: squad-web-deployment
   minReplicas: 1
   maxReplicas: 10
   targetCPUUtilizationPercentage: 50
@@ -18,20 +18,20 @@ spec:
 ---
 
 #
-# Expose qareports-web pods externally
+# Expose squad-web pods externally
 #
 apiVersion: v1
 kind: Service
 metadata:
-  name: qareports-web-service
+  name: squad-web-service
 spec:
   selector:
-    app: qareports-web
+    app: squad-web
   ports:
     - port: 80
   type: LoadBalancer
   externalIPs:
-  - 192.168.50.10  # it'll take another dns address when in production
+  - 172.31.4.240  # it'll take another dns address when in production
 
 ---
 
@@ -41,9 +41,9 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: qareports-web-apache-conf
+  name: squad-web-apache-conf
 data:
-  qareports.conf: |-
+  squad.conf: |-
     # Load some mods
     LoadModule cgid_module modules/mod_cgid.so
     LoadModule lbmethod_byrequests_module modules/mod_lbmethod_byrequests.so
@@ -66,8 +66,8 @@ data:
       Header setIfEmpty Cache-Control "no-cache"
 
       # Serve static files separately
-      Alias /static "/qareports_static/static"
-      <Directory "/qareports_static/static">
+      Alias /static "/squad_static/static"
+      <Directory "/squad_static/static">
         Require all granted
       </Directory>
 
@@ -79,45 +79,45 @@ data:
 ---
 
 #
-# Deploy initially one pod of qareports-web container
+# Deploy initially one pod of squad-web container
 #
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: qareports-web-deployment
+  name: squad-web-deployment
   labels:
-    app: qareports-web
+    app: squad-web
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: qareports-web
+      app: squad-web
   template:
     metadata:
       labels:
-        app: qareports-web
+        app: squad-web
     spec:
       initContainers:
-      - name: init-qareports-web
+      - name: init-squad-web
         image: squadproject/squad
-        command: ["cp", "-r", "/app/static", "/qareports_static"]
+        command: ["cp", "-r", "/app/static", "/squad_static"]
         volumeMounts:
         - name: static-files
-          mountPath: /qareports_static
+          mountPath: /squad_static
       containers:
       - name: apache2
         image: httpd:2.4
         command: ["sh", "-c"]
         args:
-        - cat qareports.conf >> conf/httpd.conf && httpd -D FOREGROUND
+        - cat squad.conf >> conf/httpd.conf && httpd -D FOREGROUND
         ports:
         - containerPort: 80
         volumeMounts:
-        - name: qareports-web-apache-conf
-          mountPath: /usr/local/apache2/qareports.conf
-          subPath: qareports.conf
+        - name: squad-web-apache-conf
+          mountPath: /usr/local/apache2/squad.conf
+          subPath: squad.conf
         - name: static-files
-          mountPath: /qareports_static
+          mountPath: /squad_static
         resources:
           requests:
             memory: "128M"
@@ -126,24 +126,24 @@ spec:
             memory: "512M"
             cpu: "500m"
 
-      - name: qareports-web
+      - name: squad-web
         image: squadproject/squad
         command: ["sh", "-c"]
         args:
         - squad --timeout=60 --workers=2 --fast --log-level DEBUG
         envFrom:
         - secretRef:
-            name: qareports-environment
+            name: squad-environment
 
         # Inject ldap into container
         env:
         - name: SQUAD_EXTRA_SETTINGS
           value: "/app/linaro_ldap.py"
         volumeMounts:
-        - name: qareports-ldap-conf
+        - name: squad-ldap-conf
           mountPath: /app/linaro_ldap.py
           subPath: linaro_ldap.py
-        - name: qareports-ldap-conf
+        - name: squad-ldap-conf
           mountPath: /usr/local/lib/python3.7/dist-packages/linaro_ldap_backends.py
           subPath: linaro_ldap_backends.py
 
@@ -156,13 +156,13 @@ spec:
             cpu: "500m"
 
       volumes:
-      - name: qareports-web-apache-conf
+      - name: squad-web-apache-conf
         configMap:
-          name: qareports-web-apache-conf
+          name: squad-web-apache-conf
 
       - name: static-files
         emptyDir: {}
 
-      - name: qareports-ldap-conf
+      - name: squad-ldap-conf
         configMap:
-          name: qareports-ldap-conf
+          name: squad-ldap-conf

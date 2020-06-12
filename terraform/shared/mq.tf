@@ -23,19 +23,19 @@ resource "aws_security_group" "squad_rabbitmq_security_group" {
         from_port   = 4369
         to_port     = 4369
         protocol    = "tcp"
-        cidr_blocks = ["${aws_subnet.squad_private_subnet_1.cidr_block}", "${aws_subnet.qareports_private_subnet_2.cidr_block}"]
+        cidr_blocks = ["${aws_subnet.squad_private_subnet_1.cidr_block}", "${aws_subnet.squad_private_subnet_2.cidr_block}"]
     }
     ingress {
         from_port   = 5671
         to_port     = 5672
         protocol    = "tcp"
-        cidr_blocks = ["${aws_subnet.squad_private_subnet_1.cidr_block}", "${aws_subnet.qareports_private_subnet_2.cidr_block}"]
+        cidr_blocks = ["${aws_subnet.squad_private_subnet_1.cidr_block}", "${aws_subnet.squad_private_subnet_2.cidr_block}"]
     }
     ingress {
         from_port   = 25672
         to_port     = 25672
         protocol    = "tcp"
-        cidr_blocks = ["${aws_subnet.squad_private_subnet_1.cidr_block}", "${aws_subnet.qareports_private_subnet_2.cidr_block}"]
+        cidr_blocks = ["${aws_subnet.squad_private_subnet_1.cidr_block}", "${aws_subnet.squad_private_subnet_2.cidr_block}"]
     }
 
     # Outbound internet access
